@@ -27,7 +27,8 @@ public class Plagiarism {
         //read all files in a directory
         //http://stackoverflow.com/questions/4917326/how-to-iterate-over-the-files-of-a-certain-directory-in-java
         //File path = new File("C:\\Users\\David\\Desktop\\code");
-        File path = new File("C:\\Users\\c1343067\\Desktop\\code");
+        //File path = new File("C:\\Users\\c1343067\\Desktop\\code");
+        File path = new File("C:\\Users\\c1343067.X7054D28FCA3D\\Desktop\\code");
         File[] files = path.listFiles();
         int collectionSize = files.length; //total number of docs in collection
         //ConcurrentHashMap<String, ArrayList<String[]>> x = new ConcurrentHashMap<String, ArrayList<String[]>>();
@@ -206,8 +207,7 @@ public class Plagiarism {
                     System.out.print(", iDF: " + postingsList.get(i)[iDF] + " || ");
                     System.out.println(postingsList.size());
                 }
-            }
-            
+            }  
         }
     }
     
