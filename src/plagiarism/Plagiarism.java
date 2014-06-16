@@ -1,3 +1,4 @@
+
 package plagiarism;
 
 import java.io.DataInputStream;
@@ -218,3 +219,5 @@ public class Plagiarism {
     }
 
 }
+
+//a test
