@@ -10,7 +10,8 @@ public class NGrams {
     public static void main(String args[]) {
 
         String x = new String();
-        File fileName = new File("C:\\Users\\c1343067.X7054D28FCA3D\\Desktop\\code\\1.java");
+        //File fileName = new File("C:\\Users\\c1343067.X7054D28FCA3D\\Desktop\\code\\1.java");
+        File fileName = new File("C:\\Users\\c1343067\\Desktop\\code\\1.java");
         try {
             x = readFile(fileName.toString());
         } catch (IOException ioe) {

@@ -8,28 +8,13 @@ public class Patterns {
 
     public static void main(String args[]) {
 
-        String pattern = "(?<=\\W)";
-        String s = "this is another test string";
 
-        Pattern splitter = Pattern.compile(pattern);
-        String[] results = splitter.split(s);
-
-        for (String pair : results) {
-            System.out.println(pair);
-        }
-        System.out.println(Arrays.toString(results));
-
-
-        String input = "one two three four   five six seven{ {}";
-        String[] pairs = input.split("(?<!\\G\\S+)\\s");
-        System.out.println(Arrays.toString(pairs));
-
-
-        String basic = "one     two three four five six seven ";
+        String basic = "one two three   {   f   our f  ive six seven {some java;; blah =-      () ";
         basic = basic + " ";
         char[] x = basic.toCharArray();
         boolean firstBreak = false;
         boolean firstChar = true;
+        boolean lastCharWasSpace = false;
         int position = 0;
         String temp = "";
         ArrayList<String> arrayList = new ArrayList();
@@ -37,30 +22,38 @@ public class Patterns {
         for (int i = 0; i < basic.length()-1; i++) {
             
             System.out.println("new loop: " + x[i]);
-
             String currentChar = String.valueOf(x[i]);
             if (currentChar.matches("\\S")) {
                 System.out.println("this is a character: " + currentChar);
                 if (firstChar) { 
-                    firstChar = false;
-                    
+                    System.out.println("this is the first character of a word");
+                    firstChar = false;   
                 }
                 temp = temp + currentChar;
+                System.out.print("adding character");
+                lastCharWasSpace = false;
             } else { // not a character (is a space)
-                System.out.println("this is not a character: " + currentChar);
-                if (!firstBreak) { //end of first word 
+                System.out.println("this is whitespace: " + currentChar);
+                
+                if (!firstBreak && !lastCharWasSpace) { //end of first word 
                     temp = temp + currentChar; //add space to temp
+                    System.out.println("adding whitespace ");
                     System.out.println(temp); 
                     firstBreak = true; //set firstBreak
                     position = i; //set position ready for next word
-                } else { // end of second word
+                } else if (firstBreak && !lastCharWasSpace) { // end of second word
                     arrayList.add(temp); //add temp to arraylist
                     System.out.println("adding temp: " + temp);
                     firstChar = true; // set first char ready for next word
                     i = position; //move i back to middle of last pair
                     firstBreak = false; // do we need this?
                     temp = ""; //reset temp to "";
+                } else if (lastCharWasSpace) { //more than one whitespace
+                    temp = temp + currentChar; //add space to temp
+                    System.out.println("adding whitespace ");
+                    System.out.println(temp);
                 }
+                lastCharWasSpace = true;
             }
         }
         //arrayList.add(temp);
