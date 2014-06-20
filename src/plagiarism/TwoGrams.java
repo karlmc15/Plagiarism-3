@@ -20,6 +20,7 @@ public class TwoGrams {
     public static ConcurrentHashMap<String, Double[]> inverseDocFreqMap = new ConcurrentHashMap<String, Double[]>();
     // Key is term
     // Value is double array containing [no. of documents in which this term occurs, inverse document frequency (idf)]
+    public static String[][] orderedTFIDFs = new String[(inverseDocFreqMap.size())][3];
 
     public static void main(String[] args) {
         
@@ -45,6 +46,7 @@ public class TwoGrams {
         //printResults1();
         printResults2();
         printResults3("new HashTable(hashCodeDoc2,");
+        printTopTen();
     }
 
     //this code is "Donal"'s answer from here:
@@ -157,7 +159,6 @@ public class TwoGrams {
         }
         return dictionaryMap;
     }
-
     
     public static void printResults1() {
         Iterator it2 = inverseDocFreqMap.entrySet().iterator();
@@ -172,7 +173,7 @@ public class TwoGrams {
             int inverseDocumentFrequency = 3;
             
             System.out.print("Key: " + key + ", ");
-           System.out.println(data[0] + " " + data[1]);
+            System.out.println(data[0] + " " + data[1]);
             
           
         }
@@ -204,13 +205,42 @@ public class TwoGrams {
         }
     }
     
+     //public static ConcurrentHashMap<String, Double[]> inverseDocFreqMap = new ConcurrentHashMap<String, Double[]>();
+    // Key is term
+    // Value is double array containing [no. of documents in which this term occurs, inverse document frequency (idf)]
+    
+    
+    public static void printTopTen() {
+        
+        Iterator it2 = inverseDocFreqMap.entrySet().iterator();
+        int i = 0;
+        while (it2.hasNext()) {
+            Map.Entry termEntry = (Map.Entry) it2.next();
+            String key = (String) termEntry.getKey();
+            Double[] value = (Double[])termEntry.getValue();
+            //System.out.println(value[0]);
+            //System.out.println(value[1]);
+            //String tfidf = value[1];
+            
+            orderedTFIDFs[i][0] = key;
+            orderedTFIDFs[i][1] = value[0].toString();
+            orderedTFIDFs[i][2] = value[1].toString();
+            i++;
+        }
+        for (int j =0; j<orderedTFIDFs.length; j++) {
+            if (Double.parseDouble(orderedTFIDFs[j][1].toString()) > 6.0){
+            System.out.println(orderedTFIDFs[j][0] + " " + orderedTFIDFs[j][1] + " " + orderedTFIDFs[j][2]);
+            }
+        }
+    }
+    
     public static void printResults3(String term) {
         ArrayList<String[]> postingsList = (ArrayList)dictionaryMap.get(term);
             for (int i = 0; i < postingsList.size(); i++) {
                 System.out.println(postingsList.get(i)[0]);
             }
     }
-public static ArrayList generateTwoGrams(String basic) {
+    public static ArrayList generateTwoGrams(String basic) {
 
 
         //String basic = "one two three   {   f   our f  ive six seven {some java;; blah =-      () ";
