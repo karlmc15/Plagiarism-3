@@ -26,8 +26,8 @@ public class TwoGrams {
         
         //read all files in a directory
         //http://stackoverflow.com/questions/4917326/how-to-iterate-over-the-files-of-a-certain-directory-in-java
-        //File path = new File("C:\\Users\\David\\Desktop\\code");
-        File path = new File("C:\\Users\\c1343067\\Desktop\\code");
+        File path = new File("C:\\Users\\David\\Desktop\\code");
+        //File path = new File("C:\\Users\\c1343067\\Desktop\\code");
         //File path = new File("C:\\Users\\c1343067.X7054D28FCA3D\\Desktop\\code");
         File[] files = path.listFiles();
         int collectionSize = files.length; //total number of docs in collection
@@ -46,7 +46,7 @@ public class TwoGrams {
         //printResults1();
         printResults2();
         printResults3("new HashTable(hashCodeDoc2,");
-        printTopTen();
+        //printTopTen();
     }
 
     //this code is "Donal"'s answer from here:
@@ -192,7 +192,7 @@ public class TwoGrams {
             int iDF = 3;
     
             for (int i = 0; i < postingsList.size(); i++) {
-                if ((Double.parseDouble(postingsList.get(i)[iDF]) > 0.02) && (postingsList.size()>=2) && (postingsList.size()<=6)) {
+                if ((Double.parseDouble(postingsList.get(i)[iDF]) > 0.04) && (postingsList.size()>=2) && (postingsList.size()<=6)) {
                 
                     System.out.print("Key: " + key);
                     System.out.print(", Document: " + postingsList.get(i)[documentName]);
@@ -203,12 +203,7 @@ public class TwoGrams {
                 }
             }  
         }
-    }
-    
-     //public static ConcurrentHashMap<String, Double[]> inverseDocFreqMap = new ConcurrentHashMap<String, Double[]>();
-    // Key is term
-    // Value is double array containing [no. of documents in which this term occurs, inverse document frequency (idf)]
-    
+    }    
     
     public static void printTopTen() {
         
@@ -240,35 +235,41 @@ public class TwoGrams {
                 System.out.println(postingsList.get(i)[0]);
             }
     }
-    public static ArrayList generateTwoGrams(String basic) {
-
+    
+    public static ArrayList generateTwoGrams(String inputString) {
 
         //String basic = "one two three   {   f   our f  ive six seven {some java;; blah =-      () ";
-        basic = basic + " ";
-        char[] x = basic.toCharArray();
+        inputString = inputString + " ";
+        char[] inputCharacters = inputString.toCharArray();
         boolean firstBreak = false;
         boolean firstChar = true;
         boolean lastCharWasSpace = false;
         int position = 0;
         String temp = "";
-        ArrayList<String> arrayList = new ArrayList();
+        ArrayList<String> twoGrams = new ArrayList();
         
-        for (int i = 0; i < basic.length()-1; i++) {
-            String currentChar = String.valueOf(x[i]);
-            if (currentChar.matches("\\S")) {
-                if (firstChar) { 
+        for (int i = 0; i < inputString.length()-1; i++) {
+            String currentChar = String.valueOf(inputCharacters[i]);
+            if (currentChar.matches("\\S")) { // not whitespace
+                
+                if (lastCharWasSpace && !firstChar) { //start of second word - set position 
+                    position = i-1;
+                }
+                
+                if (firstChar) { //new two-gram, first letter of first word
                     firstChar = false;   
                 }
-                temp = temp + currentChar;
+                
+                temp = temp + currentChar; //add character to temp
                 lastCharWasSpace = false;
             } else { // not a character (is a space)
                 if (!firstBreak && !lastCharWasSpace) { //end of first word 
                     temp = temp + currentChar; //add space to temp
 
                     firstBreak = true; //set firstBreak
-                    position = i; //set position ready for next word
+                    //position = i; //set position ready for next word
                 } else if (firstBreak && !lastCharWasSpace) { // end of second word
-                    arrayList.add(temp); //add temp to arraylist
+                    twoGrams.add(temp); //add temp to arraylist
                     firstChar = true; // set first char ready for next word
                     i = position; //move i back to middle of last pair
                     firstBreak = false; // do we need this?
@@ -280,7 +281,7 @@ public class TwoGrams {
             }
         }
        
-        return arrayList;
+        return twoGrams;
 
     }
 }

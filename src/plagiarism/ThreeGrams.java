@@ -12,7 +12,7 @@ import java.util.Scanner;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class Plagiarism {
+public class ThreeGrams {
 
     public static ConcurrentHashMap<String, ArrayList<String[]>> dictionaryMap = new ConcurrentHashMap<String, ArrayList<String[]>>();
     // Key is term
@@ -20,9 +20,10 @@ public class Plagiarism {
     public static ConcurrentHashMap<String, Double[]> inverseDocFreqMap = new ConcurrentHashMap<String, Double[]>();
     // Key is term
     // Value is double array containing [no. of documents in which this term occurs, inverse document frequency (idf)]
+    public static String[][] orderedTFIDFs = new String[(inverseDocFreqMap.size())][3];
 
     public static void main(String[] args) {
-
+        
         //read all files in a directory
         //http://stackoverflow.com/questions/4917326/how-to-iterate-over-the-files-of-a-certain-directory-in-java
         File path = new File("C:\\Users\\David\\Desktop\\code");
@@ -44,7 +45,8 @@ public class Plagiarism {
         }
         //printResults1();
         printResults2();
-        //printResults3("testFilePath");
+        //printResults3("new HashTable(hashCodeDoc2,");
+        //printTopTen();
     }
 
     //this code is "Donal"'s answer from here:
@@ -79,32 +81,25 @@ public class Plagiarism {
         boolean inThisDoc = false;
         boolean inMapAlready = false;
 
-        StringTokenizer st = new StringTokenizer(docContents);
-        float docLength = (float) st.countTokens();
-        ArrayList<String> al = new ArrayList<String>();
-        
+        ArrayList al = generateThreeGrams(docContents);
+        float docLength = (float) al.size();
 
-        while (st.hasMoreTokens()) {
-            al.add(st.nextToken());
-        }
-           for (int j = 0; j<al.size(); j++){
+        for (int j = 0; j<al.size(); j++){
             String currentToken = al.get(j).toString();
             if (dictionaryMap.isEmpty()) {
-
+                
                 //add this occurence to the inverseDocFreqMap
-                Double[] doubleArray = {1.0, Math.log(collectionSize / 1.0)};
+                Double[] doubleArray = {1.0, Math.log(collectionSize/1.0)};
                 inverseDocFreqMap.put(currentToken, doubleArray);
-
+                                
                 //add this occurence to the dictionaryMap
                 float newTermFrequency = 1 / docLength;
-                double newTFIDFweight = doubleArray[1] * newTermFrequency;
+                double newTFIDFweight = doubleArray[1]*newTermFrequency;
                 String[] newPosting = {docName, "1", String.valueOf(newTermFrequency), String.valueOf(newTFIDFweight)};
                 ArrayList<String[]> newPostingsList = new ArrayList<String[]>();
                 newPostingsList.add(newPosting);
                 dictionaryMap.put(currentToken, newPostingsList);
-
-                //done
-
+                
             } else {
                 if (dictionaryMap.containsKey(currentToken)) { //word is in hashmap - 2 possibilities: in this doc, or not
                     inMapAlready = true;
@@ -120,71 +115,67 @@ public class Plagiarism {
                     }
 
                     if (inThisDoc) {
-
+                        
                         Double[] temp = inverseDocFreqMap.get(currentToken);
-                        Double iDF = temp[1];
-
+                        Double iDF = temp[1]; 
+                        
                         int newFrequency = Integer.parseInt(posting[frequency]) + 1;
                         float newTermFrequency = newFrequency / docLength;
-                        double newTFIDFweight = iDF * newTermFrequency;
-
+                        double newTFIDFweight = iDF*newTermFrequency;
+                        
                         posting[frequency] = String.valueOf(newFrequency);
                         posting[termFrequency] = String.valueOf(newTermFrequency);
                         posting[TFIDFweight] = String.valueOf(newTFIDFweight);
                         currentPostingsList.set(position, posting); //update arraylist
                         dictionaryMap.put(currentToken, currentPostingsList);
                         inThisDoc = false;
-
-                        //done
-
+                        
                     } else { //not in this doc - update inverseDocFreqMap and add new posting(array) 
-
+                                              
                         Double[] temp = inverseDocFreqMap.get(currentToken);
                         Double x = temp[0] + 1.0; //add 1 to no. of docs
                         temp[0] = x;
-                        temp[1] = Math.log(collectionSize / x); //recalculate IDF
+                        temp[1] = Math.log(collectionSize/x); //recalculate IDF
                         inverseDocFreqMap.put(currentToken, temp);
-
+                        
                         float newTermFrequency = 1 / docLength;
-                        double newTFIDFweight = temp[1] * newTermFrequency;
+                        double newTFIDFweight = temp[1]*newTermFrequency; 
                         String[] newPosting = {docName, "1", String.valueOf(newTermFrequency), String.valueOf(newTFIDFweight)};
                         currentPostingsList.add(newPosting);
-                        dictionaryMap.put(currentToken, currentPostingsList);
+                        dictionaryMap.put(currentToken, currentPostingsList);                       
                     }
                 } else { //word not in hashmap - add new array and arraylist
-
-                    Double[] doubleArray = {1.0, Math.log(collectionSize / 1.0)};
+                    
+                    Double[] doubleArray = {1.0, Math.log(collectionSize/1.0)};
                     inverseDocFreqMap.put(currentToken, doubleArray);
-
+                    
                     float newTermFrequency = 1 / docLength;
                     String[] newPosting = {docName, "1", String.valueOf(newTermFrequency), "0"};
                     ArrayList<String[]> newPostingsList = new ArrayList<String[]>();
                     newPostingsList.add(newPosting);
-                    dictionaryMap.put(currentToken, newPostingsList);
+                    dictionaryMap.put(currentToken, newPostingsList);                                                           
                 }
             }
         }
         return dictionaryMap;
     }
-
-    //inverseDocFreqMap
-    //dictionaryMap
+    
     public static void printResults1() {
         Iterator it2 = inverseDocFreqMap.entrySet().iterator();
         while (it2.hasNext()) {
             Map.Entry termEntry = (Map.Entry) it2.next();
             String key = (String) termEntry.getKey();
             //ArrayList<String[]> postingsList = (ArrayList) termEntry.getValue();
-            Double[] data = (Double[]) termEntry.getValue();
+            Double[] data = (Double[])termEntry.getValue();
             int documentName = 0;
             int frequency = 1;
             int termFrequency = 2; //the frequency divided by the document length
             int inverseDocumentFrequency = 3;
-
+            
             System.out.print("Key: " + key + ", ");
             System.out.println(data[0] + " " + data[1]);
-
-
+            
+          
         }
     }
 
@@ -194,30 +185,117 @@ public class Plagiarism {
             Map.Entry termEntry = (Map.Entry) it2.next();
             String key = (String) termEntry.getKey();
             ArrayList<String[]> postingsList = (ArrayList) termEntry.getValue();
-
+            
             int documentName = 0;
             int frequency = 1;
             int termFrequency = 2; //the frequency divided by the document length
             int iDF = 3;
-
+    
             for (int i = 0; i < postingsList.size(); i++) {
-                if ((Double.parseDouble(postingsList.get(i)[iDF]) > 0.05) && (postingsList.size() >= 2) && (postingsList.size() <= 5)) {
-
+                if ((Double.parseDouble(postingsList.get(i)[iDF]) > 0.025) && (postingsList.size()>=2) && (postingsList.size()<=10)) {
+                
                     System.out.print("Key: " + key);
                     System.out.print(", Document: " + postingsList.get(i)[documentName]);
                     System.out.print(", Frequency: " + postingsList.get(i)[frequency]);
                     System.out.print(", Term Frequency: " + postingsList.get(i)[termFrequency]);
                     System.out.print(", iDF: " + postingsList.get(i)[iDF] + " || ");
                     System.out.println(postingsList.size());
+                    
+                    for (int j = 0; j<postingsList.size(); j++){
+                        System.out.println(postingsList.get(j)[documentName]);
+                    }
+                    
                 }
+            }  
+        }
+    }
+    
+     //public static ConcurrentHashMap<String, Double[]> inverseDocFreqMap = new ConcurrentHashMap<String, Double[]>();
+    // Key is term
+    // Value is double array containing [no. of documents in which this term occurs, inverse document frequency (idf)]
+    
+    
+    public static void printTopTen() {
+        
+        Iterator it2 = inverseDocFreqMap.entrySet().iterator();
+        int i = 0;
+        while (it2.hasNext()) {
+            Map.Entry termEntry = (Map.Entry) it2.next();
+            String key = (String) termEntry.getKey();
+            Double[] value = (Double[])termEntry.getValue();
+            //System.out.println(value[0]);
+            //System.out.println(value[1]);
+            //String tfidf = value[1];
+            
+            orderedTFIDFs[i][0] = key;
+            orderedTFIDFs[i][1] = value[0].toString();
+            orderedTFIDFs[i][2] = value[1].toString();
+            i++;
+        }
+        for (int j =0; j<orderedTFIDFs.length; j++) {
+            if (Double.parseDouble(orderedTFIDFs[j][1].toString()) > 6.0){
+            System.out.println(orderedTFIDFs[j][0] + " " + orderedTFIDFs[j][1] + " " + orderedTFIDFs[j][2]);
             }
         }
     }
-
+    
     public static void printResults3(String term) {
-        ArrayList<String[]> postingsList = (ArrayList) dictionaryMap.get(term);
-        for (int i = 0; i < postingsList.size(); i++) {
-            System.out.println(postingsList.get(i)[0]);
+        ArrayList<String[]> postingsList = (ArrayList)dictionaryMap.get(term);
+            for (int i = 0; i < postingsList.size(); i++) {
+                System.out.println(postingsList.get(i)[0]);
+            }
+    }
+    public static ArrayList generateThreeGrams(String inputString) {
+
+
+      
+        //String inputString = "one two three four five six seven";
+        inputString = inputString + " ";
+        char[] inputCharacters = inputString.toCharArray();
+        boolean firstBreak = false;
+        boolean secondBreak = false;
+        boolean firstChar = true;
+        boolean lastCharWasSpace = false;
+        int position = 0;
+        String temp = "";
+        ArrayList<String> arrayList = new ArrayList();
+
+        for (int i = 0; i < inputString.length() - 1; i++) {
+            String currentChar = String.valueOf(inputCharacters[i]);    //get current character as string
+            if (currentChar.matches("\\S")) {                           //not white space, then add to current string
+                
+                if (lastCharWasSpace && !firstChar) { //start of second word - set position 
+                    position = i-1;
+                }
+                if (firstChar) {
+                    firstChar = false;
+                }
+                temp = temp + currentChar;
+                lastCharWasSpace = false;
+            } else {                                                    //not a character (is a space)
+
+                if (!firstBreak && !secondBreak && !lastCharWasSpace) {                 //end of first word 
+                    temp = temp + currentChar;                          //add space to temp
+                    firstBreak = true;                                  //set firstBreak, i.e. first word finished
+                    //position = i;                                       //set position ready for next word
+                } else if (firstBreak && !secondBreak && !lastCharWasSpace) { //end of second word 
+                    temp = temp + currentChar;                          //add space to temp
+                    secondBreak = true;                                  //set firstBreak, i.e. first word finished
+                                                                        //no need to set position
+                } else if (firstBreak && secondBreak &&!lastCharWasSpace) {           // end of third word
+                    arrayList.add(temp);                                //add temp to arraylist
+                    firstChar = true;                                   // set first char ready for next word
+                    i = position;                                       //move i back to middle of last pair
+                    firstBreak = false;                                 // do we need this?
+                    secondBreak = false;
+                    temp = "";                                          //reset temp to "";
+                } else if (lastCharWasSpace) {                          //more than one whitespace
+                    temp = temp + currentChar;                          //add space to temp
+                }
+                lastCharWasSpace = true;
+            }
         }
+        return arrayList;
+
     }
 }

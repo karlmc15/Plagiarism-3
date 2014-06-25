@@ -1,18 +1,15 @@
 package plagiarism;
 
-import java.io.DataInputStream;
+
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class Plagiarism {
+public class TwoGramsBasic {
 
     public static ConcurrentHashMap<String, ArrayList<String[]>> dictionaryMap = new ConcurrentHashMap<String, ArrayList<String[]>>();
     // Key is term
@@ -79,15 +76,10 @@ public class Plagiarism {
         boolean inThisDoc = false;
         boolean inMapAlready = false;
 
-        StringTokenizer st = new StringTokenizer(docContents);
-        float docLength = (float) st.countTokens();
-        ArrayList<String> al = new ArrayList<String>();
-        
+        ArrayList al = generateTwoGrams(docContents);
+        float docLength = (float) al.size();
 
-        while (st.hasMoreTokens()) {
-            al.add(st.nextToken());
-        }
-           for (int j = 0; j<al.size(); j++){
+        for (int j = 0; j < al.size(); j++) {
             String currentToken = al.get(j).toString();
             if (dictionaryMap.isEmpty()) {
 
@@ -102,8 +94,6 @@ public class Plagiarism {
                 ArrayList<String[]> newPostingsList = new ArrayList<String[]>();
                 newPostingsList.add(newPosting);
                 dictionaryMap.put(currentToken, newPostingsList);
-
-                //done
 
             } else {
                 if (dictionaryMap.containsKey(currentToken)) { //word is in hashmap - 2 possibilities: in this doc, or not
@@ -135,8 +125,6 @@ public class Plagiarism {
                         dictionaryMap.put(currentToken, currentPostingsList);
                         inThisDoc = false;
 
-                        //done
-
                     } else { //not in this doc - update inverseDocFreqMap and add new posting(array) 
 
                         Double[] temp = inverseDocFreqMap.get(currentToken);
@@ -167,8 +155,6 @@ public class Plagiarism {
         return dictionaryMap;
     }
 
-    //inverseDocFreqMap
-    //dictionaryMap
     public static void printResults1() {
         Iterator it2 = inverseDocFreqMap.entrySet().iterator();
         while (it2.hasNext()) {
@@ -183,7 +169,6 @@ public class Plagiarism {
 
             System.out.print("Key: " + key + ", ");
             System.out.println(data[0] + " " + data[1]);
-
 
         }
     }
@@ -201,7 +186,7 @@ public class Plagiarism {
             int iDF = 3;
 
             for (int i = 0; i < postingsList.size(); i++) {
-                if ((Double.parseDouble(postingsList.get(i)[iDF]) > 0.05) && (postingsList.size() >= 2) && (postingsList.size() <= 5)) {
+                if ((Double.parseDouble(postingsList.get(i)[iDF]) > 0.02) && (postingsList.size() >= 2) && (postingsList.size() <= 6)) {
 
                     System.out.print("Key: " + key);
                     System.out.print(", Document: " + postingsList.get(i)[documentName]);
@@ -219,5 +204,63 @@ public class Plagiarism {
         for (int i = 0; i < postingsList.size(); i++) {
             System.out.println(postingsList.get(i)[0]);
         }
+    }
+
+    public static ArrayList generateTwoGrams(String a_string) {
+
+        //String a_string = "this is a  string";
+        a_string = a_string + " "; //ensures last word is added.
+        char[] a_char_array = a_string.toCharArray();
+        ArrayList<String> two_grams = new ArrayList<String>();
+
+        boolean firstWord = true;
+        boolean addWord = false;
+        int position = 0;
+        String currentWord = "";
+        String lastChar;
+
+        for (int i = 0; i < a_char_array.length; i++) { //start at second position becuase first char already added
+            //new char
+            String currentChar = String.valueOf(a_char_array[i]);
+            if (currentWord.length() == 0) {
+                currentWord = currentWord + currentChar;
+            } else {
+                lastChar = String.valueOf(a_char_array[i - 1]); //set last character
+                if (lastChar.matches("\\s") && currentChar.matches("\\s") && firstWord) { //WW
+                    position = i - 1; // set position for next n-gram      
+                    addWord = true;
+                } else if (lastChar.matches("\\s") && !currentChar.matches("\\s") && firstWord) {//WC yes
+                    position = i - 1;
+                    currentWord = currentWord + currentChar;
+                    firstWord = false;
+                } else if (!lastChar.matches("\\s") && !currentChar.matches("\\s") && firstWord) { //CC yes
+                    currentWord = currentWord + currentChar;
+                } else if (!lastChar.matches("\\s") && currentChar.matches("\\s") && firstWord) { //CW yes
+                    currentWord = currentWord + currentChar;
+                    position = i - 1;
+                    addWord = true;
+                } else if (lastChar.matches("\\s") && currentChar.matches("\\s") && !firstWord) { //WW
+                    position = i - 1;
+                    addWord = true;
+                } else if (lastChar.matches("\\s") && !currentChar.matches("\\s") && !firstWord) {//WC yes
+                    currentWord = currentWord + currentChar;
+                    // nb this never gets reached because if the previous char is W, then the word gets added.
+                    firstWord = true;
+                } else if (!lastChar.matches("\\s") && !currentChar.matches("\\s") && !firstWord) { //CC yes
+                    currentWord = currentWord + currentChar;
+                } else if (!lastChar.matches("\\s") && currentChar.matches("\\s") && !firstWord) { //CW
+                    addWord = true;
+                }
+
+                if (addWord) {
+                    two_grams.add(currentWord);
+                    currentWord = "";
+                    i = position;
+                    firstWord = true;
+                    addWord = false;
+                }
+            }
+        }
+        return two_grams;
     }
 }
