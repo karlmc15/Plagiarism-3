@@ -1,27 +1,26 @@
 package plagiarism;
 
-import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Plagiarism {
 
-    public static ConcurrentHashMap<String, ArrayList<String[]>> dictionaryMap = new ConcurrentHashMap<String, ArrayList<String[]>>();
+    private ConcurrentHashMap<String, ArrayList<String[]>> dictionaryMap = new ConcurrentHashMap<String, ArrayList<String[]>>();
     // Key is term
     // Value is array list (postings list) of string arrays (postings) of the form [docName, frequency, termFrequency (tf), tF-idf weight]
-    public static ConcurrentHashMap<String, Double[]> inverseDocFreqMap = new ConcurrentHashMap<String, Double[]>();
+    private ConcurrentHashMap<String, Double[]> inverseDocFreqMap = new ConcurrentHashMap<String, Double[]>();
     // Key is term
     // Value is double array containing [no. of documents in which this term occurs, inverse document frequency (idf)]
+    //public static ArrayList<String> al = new ArrayList<String>();
 
-    public static void main(String[] args) {
+    
+    
+    public Plagiarism(int k) {
 
         //read all files in a directory
         //http://stackoverflow.com/questions/4917326/how-to-iterate-over-the-files-of-a-certain-directory-in-java
@@ -30,42 +29,40 @@ public class Plagiarism {
         //File path = new File("C:\\Users\\c1343067.X7054D28FCA3D\\Desktop\\code");
         File[] files = path.listFiles();
         int collectionSize = files.length; //total number of docs in collection
-        //ConcurrentHashMap<String, ArrayList<String[]>> x = new ConcurrentHashMap<String, ArrayList<String[]>>();
+
+        ReadFile rf = new ReadFile();
+        NGramGenerator ngg = new NGramGenerator();
+        ArrayList<String> al = new ArrayList<String>();
+
         for (int i = 0; i < files.length; i++) {
             if (files[i].isFile()) {
                 String docName = files[i].getName();
                 try {
-                    String docContents = readFile(files[i].toString());
-                    calculateTFIDF(docContents, docName, collectionSize);
+
+                    String docContents = rf.readFile(files[i].toString());
+                    if (k == 1) {
+                        al = ngg.generateOneGrams(docContents);
+                    } else if (k == 2) {
+                        al = ngg.generateTwoGrams(docContents);
+                    } else if ( k == 4) {
+                        al = ngg.generateThreeGrams(docContents);
+                    } else if (k == 3) {
+                        al = ngg.generateTwoGramsBasic(docContents);
+                    }
+                    StringTokenizer st = new StringTokenizer(docContents);
+                    float docLength = st.countTokens();
+                    calculateTFIDF(docContents, docName, collectionSize, al, docLength);
                 } catch (IOException ioe) {
                     System.out.println("error");
                 }
             }
         }
-        //printResults1();
-        printResults2();
-        //printResults3("testFilePath");
+        
+        getMatches(0.02, 10);
+        
     }
 
-    //this code is "Donal"'s answer from here:
-    //http://stackoverflow.com/questions/326390/how-to-create-a-java-string-from-the-contents-of-a-file
-    private static String readFile(String pathname) throws IOException {
-
-        File file = new File(pathname);
-        StringBuilder fileContents = new StringBuilder((int) file.length());
-        Scanner scanner = new Scanner(file);
-        String lineSeparator = System.getProperty("line.separator");
-        try {
-            while (scanner.hasNextLine()) {
-                fileContents.append(scanner.nextLine() + lineSeparator);
-            }
-            return fileContents.toString();
-        } finally {
-            scanner.close();
-        }
-    }
-
-    public static ConcurrentHashMap calculateTFIDF(String docContents, String docName, int collectionSize) {
+    public ConcurrentHashMap calculateTFIDF(String docContents, String docName, int collectionSize, ArrayList al, float docLength) {
 
         ArrayList<String[]> currentPostingsList = new ArrayList<String[]>();
         String[] posting = new String[4];
@@ -79,17 +76,9 @@ public class Plagiarism {
         boolean inThisDoc = false;
         boolean inMapAlready = false;
 
-        StringTokenizer st = new StringTokenizer(docContents);
-        float docLength = (float) st.countTokens();
-        ArrayList<String> al = new ArrayList<String>();
-        
-
-        while (st.hasMoreTokens()) {
-            al.add(st.nextToken());
-        }
-           for (int j = 0; j<al.size(); j++){
+        for (int j = 0; j < al.size(); j++) {
             String currentToken = al.get(j).toString();
-            if (dictionaryMap.isEmpty()) {
+            if (dictionaryMap.isEmpty()) { //add first nGram
 
                 //add this occurence to the inverseDocFreqMap
                 Double[] doubleArray = {1.0, Math.log(collectionSize / 1.0)};
@@ -102,8 +91,6 @@ public class Plagiarism {
                 ArrayList<String[]> newPostingsList = new ArrayList<String[]>();
                 newPostingsList.add(newPosting);
                 dictionaryMap.put(currentToken, newPostingsList);
-
-                //done
 
             } else {
                 if (dictionaryMap.containsKey(currentToken)) { //word is in hashmap - 2 possibilities: in this doc, or not
@@ -127,15 +114,12 @@ public class Plagiarism {
                         int newFrequency = Integer.parseInt(posting[frequency]) + 1;
                         float newTermFrequency = newFrequency / docLength;
                         double newTFIDFweight = iDF * newTermFrequency;
-
                         posting[frequency] = String.valueOf(newFrequency);
                         posting[termFrequency] = String.valueOf(newTermFrequency);
                         posting[TFIDFweight] = String.valueOf(newTFIDFweight);
                         currentPostingsList.set(position, posting); //update arraylist
                         dictionaryMap.put(currentToken, currentPostingsList);
                         inThisDoc = false;
-
-                        //done
 
                     } else { //not in this doc - update inverseDocFreqMap and add new posting(array) 
 
@@ -152,7 +136,6 @@ public class Plagiarism {
                         dictionaryMap.put(currentToken, currentPostingsList);
                     }
                 } else { //word not in hashmap - add new array and arraylist
-
                     Double[] doubleArray = {1.0, Math.log(collectionSize / 1.0)};
                     inverseDocFreqMap.put(currentToken, doubleArray);
 
@@ -167,28 +150,7 @@ public class Plagiarism {
         return dictionaryMap;
     }
 
-    //inverseDocFreqMap
-    //dictionaryMap
-    public static void printResults1() {
-        Iterator it2 = inverseDocFreqMap.entrySet().iterator();
-        while (it2.hasNext()) {
-            Map.Entry termEntry = (Map.Entry) it2.next();
-            String key = (String) termEntry.getKey();
-            //ArrayList<String[]> postingsList = (ArrayList) termEntry.getValue();
-            Double[] data = (Double[]) termEntry.getValue();
-            int documentName = 0;
-            int frequency = 1;
-            int termFrequency = 2; //the frequency divided by the document length
-            int inverseDocumentFrequency = 3;
-
-            System.out.print("Key: " + key + ", ");
-            System.out.println(data[0] + " " + data[1]);
-
-
-        }
-    }
-
-    public static void printResults2() {
+    public void getMatches(double minimumIDF, int quantityOfPostings) {
         Iterator it2 = dictionaryMap.entrySet().iterator();
         while (it2.hasNext()) {
             Map.Entry termEntry = (Map.Entry) it2.next();
@@ -201,7 +163,7 @@ public class Plagiarism {
             int iDF = 3;
 
             for (int i = 0; i < postingsList.size(); i++) {
-                if ((Double.parseDouble(postingsList.get(i)[iDF]) > 0.05) && (postingsList.size() >= 2) && (postingsList.size() <= 5)) {
+                if ((Double.parseDouble(postingsList.get(i)[iDF]) > minimumIDF) && (postingsList.size() >= 2) && (postingsList.size() <= quantityOfPostings)) {
 
                     System.out.print("Key: " + key);
                     System.out.print(", Document: " + postingsList.get(i)[documentName]);
@@ -209,15 +171,13 @@ public class Plagiarism {
                     System.out.print(", Term Frequency: " + postingsList.get(i)[termFrequency]);
                     System.out.print(", iDF: " + postingsList.get(i)[iDF] + " || ");
                     System.out.println(postingsList.size());
+
+                    for (int j = 0; j < postingsList.size(); j++) {
+                        System.out.println(postingsList.get(j)[documentName]);
+                    }
                 }
             }
         }
     }
 
-    public static void printResults3(String term) {
-        ArrayList<String[]> postingsList = (ArrayList) dictionaryMap.get(term);
-        for (int i = 0; i < postingsList.size(); i++) {
-            System.out.println(postingsList.get(i)[0]);
-        }
-    }
 }
