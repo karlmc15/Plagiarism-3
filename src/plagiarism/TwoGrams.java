@@ -1,15 +1,21 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
 package plagiarism;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class Plagiarism {
-
+/**
+ *
+ * @author c1343067
+ */
+public class TwoGrams {
+    
     private ConcurrentHashMap<String, ArrayList<String[]>> dictionaryMap = new ConcurrentHashMap<String, ArrayList<String[]>>();
     // Key is term
     // Value is array list (postings list) of string arrays (postings) of the form [docName, frequency, termFrequency (tf), tF-idf weight]
@@ -17,8 +23,8 @@ public class Plagiarism {
     // Key is term
     // Value is double array containing [no. of documents in which this term occurs, inverse document frequency (idf)]
     //public static ArrayList<String> al = new ArrayList<String>();
-
-    public Plagiarism(int k) {
+    
+    public ArrayList<String> TwoGrams() {
 
         //read all files in a directory
         //http://stackoverflow.com/questions/4917326/how-to-iterate-over-the-files-of-a-certain-directory-in-java
@@ -37,15 +43,7 @@ public class Plagiarism {
                 String docName = files[i].getName();
                 try {
                     String docContents = rf.readFile(files[i].toString());
-                    if (k == 1) {
-                        al = ngg.generateOneGrams(docContents);
-                    } else if (k == 2) {
-                        al = ngg.generateTwoGrams(docContents);
-                    } else if (k == 4) {
-                        al = ngg.generateThreeGrams(docContents);
-                    } else if (k == 3) {
-                        al = ngg.generateTwoGramsBasic(docContents);
-                    }
+                    al = ngg.generateTwoGrams(docContents);
                     StringTokenizer st = new StringTokenizer(docContents);
                     float docLength = st.countTokens();
                     calculateTFIDF(docContents, docName, collectionSize, al, docLength);
@@ -54,7 +52,8 @@ public class Plagiarism {
                 }
             }
         }
-        getMatches(0.05, 10);
+        return al;
+
     }
     
     public ConcurrentHashMap calculateTFIDF(String docContents, String docName, int collectionSize, ArrayList al, float docLength) {
@@ -143,44 +142,5 @@ public class Plagiarism {
             }
         }
         return dictionaryMap;
-    }
-
-    public void getMatches(double minimumIDF, int quantityOfPostings) {
-        Iterator it2 = dictionaryMap.entrySet().iterator();
-        System.out.println(" - - - - - iDF > " + minimumIDF + "- - - - - -");
-        System.out.println(" ");
-        
-        while (it2.hasNext()) {
-            Map.Entry termEntry = (Map.Entry) it2.next();
-            String key = (String) termEntry.getKey();
-            ArrayList<String[]> postingsList = (ArrayList) termEntry.getValue();
-
-            int documentName = 0;
-            int frequency = 1;
-            int termFrequency = 2; //the frequency divided by the document length
-            int iDF = 3;
-
-            
-            
-            for (int i = 0; i < postingsList.size(); i++) {
-                if ((Double.parseDouble(postingsList.get(i)[iDF]) > minimumIDF) && (postingsList.size() >= 2) && (postingsList.size() <= quantityOfPostings)) {
-
-                    System.out.print("'" + key + "'");
-                    System.out.print(", Document: " + postingsList.get(i)[documentName]);
-                    System.out.print(", Frequency: " + postingsList.get(i)[frequency]);
-                    System.out.print(", Term Frequency: " + postingsList.get(i)[termFrequency]);
-                    System.out.print(", iDF: " + postingsList.get(i)[iDF] + " || ");
-                    System.out.println(postingsList.size());
-
-                    for (int j = 0; j < postingsList.size(); j++) {
-                        System.out.print(postingsList.get(j)[documentName] + ", ");
-                    }
-                 
-                    System.out.println(" ");
-                    System.out.println(" ");
-                    
-                }
-            }
-        }
     }
 }

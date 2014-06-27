@@ -74,9 +74,6 @@ public class View extends JFrame implements ActionListener {
         
         this.resultsPane = new JTextPane();
         panel.add(resultsPane);
-        
-        
-
     }
 
     @Override
