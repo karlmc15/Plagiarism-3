@@ -173,6 +173,64 @@ public class NGramGenerator {
         return nGrams;
 
     }
+    
+    public ArrayList generateFourGrams(String docContents) {
+
+        docContents = docContents + " ";
+        char[] inputCharacters = docContents.toCharArray();
+        boolean firstBreak = false;
+        boolean secondBreak = false;
+        boolean thirdBreak = false;
+        boolean firstChar = true;
+        boolean lastCharWasSpace = false;
+        int position = 0;
+        String temp = "";
+        ArrayList<String> nGrams = new ArrayList();
+
+        for (int i = 0; i < docContents.length() - 1; i++) {    //COME BACK TO THIS -- I THINK THIS NEEDS CHANGING - MAYBE USE 
+                                                                //SPLIT METHOD TO GET THE NUMBER OF WORDS 
+            String currentChar = String.valueOf(inputCharacters[i]);    //get current character as string
+            if (currentChar.matches("\\S")) {                           //not white space, then add to current string
+                
+                if (lastCharWasSpace && !firstChar) {                   //start of second word - set position 
+                    position = i-1;
+                }
+                if (firstChar) {
+                    firstChar = false;
+                }
+                temp = temp + currentChar;
+                lastCharWasSpace = false;
+            } else {                                                        //not a character (is a space)
+
+                if (!firstBreak && !secondBreak && !lastCharWasSpace) {     //end of first word 
+                    temp = temp + currentChar;                              //add space to temp
+                    firstBreak = true;                                      //set firstBreak, i.e. first word finished
+                    //position = i;                                         //set position ready for next word
+                } else if (firstBreak && !secondBreak && !lastCharWasSpace) { //end of second word 
+                    temp = temp + currentChar;                              //add space to temp
+                    secondBreak = true;                                     //set firstBreak, i.e. first word finished
+                                                                            //no need to set position
+                } else if (firstBreak && secondBreak &&!thirdBreak && !lastCharWasSpace) { //end of third word
+                    temp = temp + currentChar;
+                    thirdBreak = true;
+                    
+                } else if (firstBreak && secondBreak && thirdBreak &&!lastCharWasSpace) { //end of fourth word
+                    nGrams.add(temp);                                       //add temp to arraylist
+                    firstChar = true;                                       //set first char ready for next word
+                    i = position;                                           //move i back to middle of last pair
+                    firstBreak = false;                                     //do I need this?
+                    secondBreak = false;
+                    thirdBreak = false;
+                    temp = "";                                              //reset temp to "";
+                } else if (lastCharWasSpace) {                              //more than one whitespace
+                    temp = temp + currentChar;                              //add space to temp
+                }
+                lastCharWasSpace = true;
+            }
+        }
+        return nGrams;
+
+    }
 }
     
 

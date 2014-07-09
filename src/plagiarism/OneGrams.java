@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class TwoGrams {
+public class OneGrams {
 
     private final ConcurrentHashMap<String, ArrayList<String[]>> dictionaryMap = new ConcurrentHashMap<String, ArrayList<String[]>>();
     // Key is term
@@ -17,13 +17,13 @@ public class TwoGrams {
     // Key is term
     // Value is double array containing [no. of documents in which this term occurs, inverse document frequency (idf)]
 
-    public TwoGrams(){} 
- 
+    public OneGrams() {}
+
     public void generate() {
 
         //read all files in a directory
         //http://stackoverflow.com/questions/4917326/how-to-iterate-over-the-files-of-a-certain-directory-in-java
-        File path = new File("C:\\Users\\David\\Desktop\\code");
+        File path = new File("C:\\Users\\David\\Desktop\\Code");
         //File path = new File("C:\\Users\\c1343067\\Desktop\\code");
         //File path = new File("C:\\Users\\c1343067.X7054D28FCAE8\\Desktop\\code");
         File[] files = path.listFiles();
@@ -38,17 +38,17 @@ public class TwoGrams {
                 String docName = files[i].getName();
                 try {
                     String docContents = rf.readFile(files[i].toString());
-                    al = ngg.generateTwoGrams(docContents);
+                    al = ngg.generateOneGrams(docContents);
                     StringTokenizer st = new StringTokenizer(docContents);
                     float docLength = st.countTokens();
                     calculateTFandIDF(docContents, docName, collectionSize, al, docLength);
+
                 } catch (IOException ioe) {
                     System.out.println("error");
                 }
             }
         }
         calculateTFIDF();
-
     }
 
     public ConcurrentHashMap calculateTFandIDF(String docContents, String docName, int collectionSize, ArrayList al, float docLength) {
@@ -168,7 +168,7 @@ public class TwoGrams {
             dictionaryMap.put(key, postingsList); //finished, add postings list to map
         }
     }
-    
+
     public void getMatches(double minimumTFIDF, int quantityOfPostings) {
         Iterator it2 = dictionaryMap.entrySet().iterator();
         System.out.println(" - - - - - tFiDF > " + minimumTFIDF + " - - - - - -");

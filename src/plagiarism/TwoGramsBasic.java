@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class TwoGrams {
+public class TwoGramsBasic {
 
     private final ConcurrentHashMap<String, ArrayList<String[]>> dictionaryMap = new ConcurrentHashMap<String, ArrayList<String[]>>();
     // Key is term
@@ -16,11 +16,10 @@ public class TwoGrams {
     private final ConcurrentHashMap<String, Double[]> inverseDocFreqMap = new ConcurrentHashMap<String, Double[]>();
     // Key is term
     // Value is double array containing [no. of documents in which this term occurs, inverse document frequency (idf)]
-
-    public TwoGrams(){} 
- 
-    public void generate() {
-
+    
+    public TwoGramsBasic() {}
+    
+    public void generate(){
         //read all files in a directory
         //http://stackoverflow.com/questions/4917326/how-to-iterate-over-the-files-of-a-certain-directory-in-java
         File path = new File("C:\\Users\\David\\Desktop\\code");
@@ -38,30 +37,31 @@ public class TwoGrams {
                 String docName = files[i].getName();
                 try {
                     String docContents = rf.readFile(files[i].toString());
-                    al = ngg.generateTwoGrams(docContents);
+                    al = ngg.generateTwoGramsBasic(docContents);
                     StringTokenizer st = new StringTokenizer(docContents);
                     float docLength = st.countTokens();
-                    calculateTFandIDF(docContents, docName, collectionSize, al, docLength);
+                    calculateTFIDF(docContents, docName, collectionSize, al, docLength);
                 } catch (IOException ioe) {
                     System.out.println("error");
                 }
             }
         }
-        calculateTFIDF();
+        
+       
 
     }
 
-    public ConcurrentHashMap calculateTFandIDF(String docContents, String docName, int collectionSize, ArrayList al, float docLength) {
+    public ConcurrentHashMap calculateTFIDF(String docContents, String docName, int collectionSize, ArrayList al, float docLength) {
 
         ArrayList<String[]> currentPostingsList = new ArrayList<String[]>();
         String[] posting = new String[4];
 
-        //CONSTANTS
-        final int IDF = 1;
+        //constants
         final int documentName = 0;
         final int frequency = 1;
         final int termFrequency = 2; //the frequency divided by the document length
         final int TFIDFweight = 3; // log_e(Total number of documents / Number of documents with term t in it)
+        final int IDF = 1;
 
         int position = 0;
         boolean inThisDoc = false;
@@ -70,13 +70,15 @@ public class TwoGrams {
         for (int j = 0; j < al.size(); j++) {
             String currentToken = al.get(j).toString();
             if (dictionaryMap.isEmpty()) { //add first term
+
                 //add this occurence to the inverseDocFreqMap
-                Double[] doubleArray = {1.0, Math.log(collectionSize / 1.0)}; //1.0 because this is the first occurance
+                Double[] doubleArray = {1.0, Math.log(collectionSize / 1.0)};
                 inverseDocFreqMap.put(currentToken, doubleArray);
 
                 //add this occurence to the dictionaryMap
-                double newTermFrequency = 1.0 / docLength;
-                String[] newPosting = {docName, "1", String.valueOf(newTermFrequency), "0"};
+                float newTermFrequency = 1 / docLength;
+                double newTFIDFweight = doubleArray[1] * newTermFrequency;
+                String[] newPosting = {docName, "1", String.valueOf(newTermFrequency), String.valueOf(newTFIDFweight)};
                 ArrayList<String[]> newPostingsList = new ArrayList<String[]>();
                 newPostingsList.add(newPosting);
                 dictionaryMap.put(currentToken, newPostingsList);
@@ -97,13 +99,16 @@ public class TwoGrams {
 
                     if (inThisDoc) {
 
-                        //iDF doesn't change, just need to change TF
-                        
+                        //iDF doesn´t change, but we need to retrieve it
+                        Double[] temp = inverseDocFreqMap.get(currentToken); //get the array containing the iDF
+                        Double iDF = temp[1]; //get the iDF to use below
 
                         int newFrequency = Integer.parseInt(posting[frequency]) + 1; //add one to the frequency
                         float newTermFrequency = newFrequency / docLength; // calculate a new TF
+                        double newTFIDFweight = iDF * newTermFrequency; // calculate a new TFIDF
                         posting[frequency] = String.valueOf(newFrequency); //update the posting with the new frequency
                         posting[termFrequency] = String.valueOf(newTermFrequency);
+                        posting[TFIDFweight] = String.valueOf(newTFIDFweight);
                         currentPostingsList.set(position, posting); //update arraylist
                         dictionaryMap.put(currentToken, currentPostingsList);
                         inThisDoc = false;
@@ -111,6 +116,7 @@ public class TwoGrams {
                     } else { //not in this doc: 
                         // 1) update inverseDocFreqMap
                         // 2) add new posting(array) 
+                        // 3) AND!! Change all the TFIDFs, using the new IDF value
 
                         // 1)
                         Double[] temp = inverseDocFreqMap.get(currentToken);
@@ -123,18 +129,33 @@ public class TwoGrams {
                         float newTermFrequency = 1 / docLength;
                         double newTFIDFweight = temp[1] * newTermFrequency;
                         String[] newPosting = {docName, "1", String.valueOf(newTermFrequency), String.valueOf(newTFIDFweight)};
-                        currentPostingsList.add(newPosting);       
+                        currentPostingsList.add(newPosting);
+                        //dictionaryMap.put(currentToken, currentPostingsList);
 
+                        //need to write code here to re-calculate all the tF-iDFs, given the new iDF
+                        //1) get entire postings list - already have this, its currentPostingsList (ArrayList<String[]>)
+                        //2) get new iDF - this is temp[1];
+                        //3) cycle through postings and re-calculate tF-iDFs
+                        for (int i = 0; i < currentPostingsList.size(); i++) {
+                           
+                            posting = currentPostingsList.get(i); //get the posting
+                            double tF = Double.parseDouble(posting[termFrequency]); //get the termfrequency
+
+                            double newTFIDF = temp[1] * tF; // calculate a new TFIDF
+                            posting[TFIDFweight] = String.valueOf(newTFIDF); //re-assign the new TFIDF
+                            currentPostingsList.set(i, posting); //update postingslist (arraylist)
+                            
+                        }
+                        dictionaryMap.put(currentToken, currentPostingsList); //finished, add postings list to map
+                        
                     }
                 } else { //word not in hashmap - add new array and arraylist
-                    
-                    //add new entry to inverseDocFreqMap, frequency is one
                     Double[] doubleArray = {1.0, Math.log(collectionSize / 1.0)};
                     inverseDocFreqMap.put(currentToken, doubleArray);
 
-                    //add new posting to dictionaryMap
                     double newTermFrequency = 1.0 / docLength;
-                    String[] newPosting = {docName, "1", String.valueOf(newTermFrequency), "0"};
+                    double newTFIDFweight = (doubleArray[IDF] * newTermFrequency);
+                    String[] newPosting = {docName, "1", String.valueOf(newTermFrequency), String.valueOf(newTFIDFweight)};
                     ArrayList<String[]> newPostingsList = new ArrayList<String[]>();
                     newPostingsList.add(newPosting);
                     dictionaryMap.put(currentToken, newPostingsList);
@@ -144,31 +165,6 @@ public class TwoGrams {
         return dictionaryMap;
     }
 
-    public void calculateTFIDF() {
-        Iterator it3 = dictionaryMap.entrySet().iterator();
-        while (it3.hasNext()) {
-            Map.Entry termEntry = (Map.Entry) it3.next();
-            String key = (String) termEntry.getKey();
-            ArrayList<String[]> postingsList = (ArrayList) termEntry.getValue();
-            double IDF = inverseDocFreqMap.get(key)[1];
-
-            //constants
-            int termFrequency = 2; //the frequency divided by the document length
-            int tFiDF = 3;
-
-            for (int i = 0; i < postingsList.size(); i++) {
-
-                String[] posting = postingsList.get(i); //get the posting
-                double tF = Double.parseDouble(posting[termFrequency]); //get the termfrequency
-                double newTFIDF = IDF * tF; // calculate a new TFIDF
-                posting[tFiDF] = String.valueOf(newTFIDF); //re-assign the new TFIDF
-                postingsList.set(i, posting); //update postingslist (arraylist)
-
-            }
-            dictionaryMap.put(key, postingsList); //finished, add postings list to map
-        }
-    }
-    
     public void getMatches(double minimumTFIDF, int quantityOfPostings) {
         Iterator it2 = dictionaryMap.entrySet().iterator();
         System.out.println(" - - - - - tFiDF > " + minimumTFIDF + " - - - - - -");

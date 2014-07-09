@@ -5,11 +5,10 @@ import java.io.IOException;
 import java.util.Scanner;
 
 public class ReadFile {
-    
-        //this code is "Donal"'s answer from here:
+
+    //this code is "Donal"'s answer from here:
     //http://stackoverflow.com/questions/326390/how-to-create-a-java-string-from-the-contents-of-a-file
-    
-        public String readFile(String pathname) throws IOException {
+    public String readFile(String pathname) throws IOException {
 
         File file = new File(pathname);
         StringBuilder fileContents = new StringBuilder((int) file.length());
@@ -25,4 +24,5 @@ public class ReadFile {
         }
     }
     
+
 }

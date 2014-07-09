@@ -22,9 +22,9 @@ public class Plagiarism {
 
         //read all files in a directory
         //http://stackoverflow.com/questions/4917326/how-to-iterate-over-the-files-of-a-certain-directory-in-java
-        //File path = new File("C:\\Users\\David\\Desktop\\code");
+        File path = new File("C:\\Users\\David\\Desktop\\code");
         //File path = new File("C:\\Users\\c1343067\\Desktop\\code");
-        File path = new File("C:\\Users\\c1343067.X7054D28FCAE8\\Desktop\\code");
+        //File path = new File("C:\\Users\\c1343067.X7054D28FCAE8\\Desktop\\code");
         File[] files = path.listFiles();
         int collectionSize = files.length; //total number of docs in collection
 
@@ -54,7 +54,6 @@ public class Plagiarism {
                 }
             }
         }
-        getMatches(0.05, 10);
     }
     
     public ConcurrentHashMap calculateTFIDF(String docContents, String docName, int collectionSize, ArrayList al, float docLength) {
@@ -158,18 +157,16 @@ public class Plagiarism {
             int documentName = 0;
             int frequency = 1;
             int termFrequency = 2; //the frequency divided by the document length
-            int iDF = 3;
-
-            
-            
+            int tFiDF = 3;
+        
             for (int i = 0; i < postingsList.size(); i++) {
-                if ((Double.parseDouble(postingsList.get(i)[iDF]) > minimumIDF) && (postingsList.size() >= 2) && (postingsList.size() <= quantityOfPostings)) {
+                if ((Double.parseDouble(postingsList.get(i)[tFiDF]) > minimumIDF) && (postingsList.size() >= 2) && (postingsList.size() <= quantityOfPostings)) {
 
                     System.out.print("'" + key + "'");
                     System.out.print(", Document: " + postingsList.get(i)[documentName]);
                     System.out.print(", Frequency: " + postingsList.get(i)[frequency]);
                     System.out.print(", Term Frequency: " + postingsList.get(i)[termFrequency]);
-                    System.out.print(", iDF: " + postingsList.get(i)[iDF] + " || ");
+                    System.out.print(", iDF: " + postingsList.get(i)[tFiDF] + " || ");
                     System.out.println(postingsList.size());
 
                     for (int j = 0; j < postingsList.size(); j++) {
@@ -177,10 +174,10 @@ public class Plagiarism {
                     }
                  
                     System.out.println(" ");
-                    System.out.println(" ");
-                    
+                    System.out.println(" ");                    
                 }
             }
         }
     }
-}
+    
+    }
