@@ -5,36 +5,72 @@ import java.util.StringTokenizer;
 
 public class NGramGenerator {
     
-    public ArrayList generateOneGrams(String docContents) {
+//    public static void main (String[] args){
+//        String testString = "this is a       test";
+//        ArrayList testList = generateSpaces(testString);
+//        for (int i = 0; i<testList.size(); i++){
+//            System.out.println(testList.get(i));           
+//        }
+//    }
+    
+    //takes a single document, and adds all tokens to an array list
+    public ArrayList<String> generateOneGrams(String docContents) {
         StringTokenizer st = new StringTokenizer(docContents);
         
-        ArrayList nGrams = new ArrayList<String>();
-
-        while (st.hasMoreTokens()) {
-            nGrams.add(st.nextToken());
-
-        }
-        return nGrams;
+        ArrayList<String> tokens = new ArrayList<String>();
         
+        while (st.hasMoreTokens()) {
+            tokens.add(st.nextToken());
+        }
+        return tokens;
     }
     
-    public ArrayList generateTwoGramsBasic(String docContents) {
+    public ArrayList<String> generateSpaces(String docContents) {
+        docContents = docContents + " ";
+        char[] docChars = docContents.toCharArray();
+        ArrayList<String> tokens = new ArrayList<String>();
+        
+        StringBuilder currentToken = new StringBuilder();
+        boolean tokenFlag = false;
+        
+        for (int i = 0; i<docChars.length; i++) {
+            String currentChar = String.valueOf(docChars[i]);
+            if (currentChar.matches("\\s")){ //is a space
+                currentToken.append(currentChar);
+                tokenFlag = true;
+                //?maybe?need a break here? to go to next letter
+            } else { //currentchar is a alphanumeric character
+                if (tokenFlag){ //end of a token, add and reset
+                    tokens.add(currentToken.toString());
+                    currentToken.setLength(0);
+                    tokenFlag = false;
+                } else {
+                    // do nothing
+                }
+            }  
+        }
+        return tokens;
+    }
+    
+    public ArrayList<String> generateTwoGramsBasic(String docContents) {
 
         docContents = docContents + " "; //ensures last word is added.
         char[] a_char_array = docContents.toCharArray();
-        ArrayList<String> nGrams = new ArrayList<String>();
-
+        ArrayList<String> tokens = new ArrayList<String>();
+        
         boolean firstWord = true;
         boolean addWord = false;
         int position = 0;
-        String currentWord = "";
+        //String currentWord = "";
+        StringBuilder currentToken = new StringBuilder();
         String lastChar;
 
         for (int i = 0; i < a_char_array.length; i++) { //start at second position becuase first char already added
             //new char
             String currentChar = String.valueOf(a_char_array[i]);
-            if (currentWord.length() == 0) {
-                currentWord = currentWord + currentChar;
+            if (currentToken.length() == 0) {
+                //currentWord = currentWord + currentChar;
+                currentToken.append(currentChar);
             } else {
                 lastChar = String.valueOf(a_char_array[i - 1]); //set last character
                 if (lastChar.matches("\\s") && currentChar.matches("\\s") && firstWord) { //WW
@@ -42,40 +78,45 @@ public class NGramGenerator {
                     addWord = true;
                 } else if (lastChar.matches("\\s") && !currentChar.matches("\\s") && firstWord) {//WC yes
                     position = i - 1;
-                    currentWord = currentWord + currentChar;
+                    //currentWord = currentWord + currentChar;
+                    currentToken.append(currentChar);
                     firstWord = false;
                 } else if (!lastChar.matches("\\s") && !currentChar.matches("\\s") && firstWord) { //CC yes
-                    currentWord = currentWord + currentChar;
+                    //currentWord = currentWord + currentChar;
+                    currentToken.append(currentChar);
                 } else if (!lastChar.matches("\\s") && currentChar.matches("\\s") && firstWord) { //CW yes
-                    currentWord = currentWord + currentChar;
+                    //currentWord = currentWord + currentChar;
+                    currentToken.append(currentChar);
                     position = i - 1;
                     addWord = true;
                 } else if (lastChar.matches("\\s") && currentChar.matches("\\s") && !firstWord) { //WW
                     position = i - 1;
                     addWord = true;
                 } else if (lastChar.matches("\\s") && !currentChar.matches("\\s") && !firstWord) {//WC yes
-                    currentWord = currentWord + currentChar;
+                    //currentWord = currentWord + currentChar;
+                    currentToken.append(currentChar);
                     // nb this never gets reached because if the previous char is W, then the word gets added.
                     firstWord = true;
                 } else if (!lastChar.matches("\\s") && !currentChar.matches("\\s") && !firstWord) { //CC yes
-                    currentWord = currentWord + currentChar;
+                    //currentWord = currentWord + currentChar;
+                    currentToken.append(currentChar);
                 } else if (!lastChar.matches("\\s") && currentChar.matches("\\s") && !firstWord) { //CW
                     addWord = true;
                 }
 
                 if (addWord) {
-                    nGrams.add(currentWord);
-                    currentWord = "";
+                    tokens.add(currentToken.toString());
+                    currentToken.setLength(0);
                     i = position;
                     firstWord = true;
                     addWord = false;
                 }
             }
         }
-        return nGrams;
+        return tokens;
     }
     
-    public ArrayList generateTwoGrams(String docContents) {
+    public ArrayList<String> generateTwoGrams(String docContents) {
 
         docContents = docContents + " ";
         char[] inputCharacters = docContents.toCharArray();
@@ -83,8 +124,9 @@ public class NGramGenerator {
         boolean firstChar = true;
         boolean lastCharWasSpace = false;
         int position = 0;
-        String temp = "";
-        ArrayList<String> nGrams = new ArrayList();
+        StringBuilder currentToken = new StringBuilder();
+        
+        ArrayList<String> tokens = new ArrayList<String>();
         
         for (int i = 0; i < docContents.length()-1; i++) {
             String currentChar = String.valueOf(inputCharacters[i]);
@@ -97,30 +139,26 @@ public class NGramGenerator {
                 if (firstChar) { //new two-gram, first letter of first word
                     firstChar = false;   
                 }
-                
-                temp = temp + currentChar; //add character to temp
+                currentToken.append(currentChar);
                 lastCharWasSpace = false;
             } else { // not a character (is a space)
-                if (!firstBreak && !lastCharWasSpace) { //end of first word 
-                    temp = temp + currentChar; //add space to temp
-
+                if (!firstBreak && !lastCharWasSpace) { //end of first word
+                    currentToken.append(currentChar); //add space
                     firstBreak = true; //set firstBreak
                     //position = i; //set position ready for next word
                 } else if (firstBreak && !lastCharWasSpace) { // end of second word
-                    nGrams.add(temp); //add temp to arraylist
+                    tokens.add(currentToken.toString()); //add token to arraylist
                     firstChar = true; // set first char ready for next word
                     i = position; //move i back to middle of last pair
                     firstBreak = false; // do we need this?
-                    temp = ""; //reset temp to "";
+                    currentToken.setLength(0); //reset current token
                 } else if (lastCharWasSpace) { //more than one whitespace
-                    temp = temp + currentChar; //add space to temp
+                    currentToken.append(currentChar); //add space
                 }
                 lastCharWasSpace = true;
             }
         }
-       
-        return nGrams;
-
+        return tokens;
     }
     
     public ArrayList generateThreeGrams(String docContents) {
@@ -132,8 +170,8 @@ public class NGramGenerator {
         boolean firstChar = true;
         boolean lastCharWasSpace = false;
         int position = 0;
-        String temp = "";
-        ArrayList<String> nGrams = new ArrayList();
+        StringBuilder currentToken = new StringBuilder();
+        ArrayList<String> tokens = new ArrayList();
 
         for (int i = 0; i < docContents.length() - 1; i++) {
             String currentChar = String.valueOf(inputCharacters[i]);    //get current character as string
@@ -145,32 +183,32 @@ public class NGramGenerator {
                 if (firstChar) {
                     firstChar = false;
                 }
-                temp = temp + currentChar;
+                currentToken.append(currentChar);
                 lastCharWasSpace = false;
             } else {                                                    //not a character (is a space)
 
                 if (!firstBreak && !secondBreak && !lastCharWasSpace) {                 //end of first word 
-                    temp = temp + currentChar;                          //add space to temp
+                    currentToken.append(currentChar);;                          //add space
                     firstBreak = true;                                  //set firstBreak, i.e. first word finished
                     //position = i;                                       //set position ready for next word
                 } else if (firstBreak && !secondBreak && !lastCharWasSpace) { //end of second word 
-                    temp = temp + currentChar;                          //add space to temp
+                    currentToken.append(currentChar);                       //add space 
                     secondBreak = true;                                  //set firstBreak, i.e. first word finished
                                                                         //no need to set position
                 } else if (firstBreak && secondBreak &&!lastCharWasSpace) {           // end of third word
-                    nGrams.add(temp);                                //add temp to arraylist
+                    tokens.add(currentToken.toString());                                //add token to arraylist
                     firstChar = true;                                   // set first char ready for next word
                     i = position;                                       //move i back to middle of last pair
                     firstBreak = false;                                 // do we need this?
                     secondBreak = false;
-                    temp = "";                                          //reset temp to "";
+                    currentToken.setLength(0);                                          //reset current token
                 } else if (lastCharWasSpace) {                          //more than one whitespace
-                    temp = temp + currentChar;                          //add space to temp
+                    currentToken.append(currentChar);                      //add space
                 }
                 lastCharWasSpace = true;
             }
         }
-        return nGrams;
+        return tokens;
 
     }
     
@@ -184,8 +222,8 @@ public class NGramGenerator {
         boolean firstChar = true;
         boolean lastCharWasSpace = false;
         int position = 0;
-        String temp = "";
-        ArrayList<String> nGrams = new ArrayList();
+        StringBuilder currentToken = new StringBuilder();
+        ArrayList<String> tokens = new ArrayList();
 
         for (int i = 0; i < docContents.length() - 1; i++) {    //COME BACK TO THIS -- I THINK THIS NEEDS CHANGING - MAYBE USE 
                                                                 //SPLIT METHOD TO GET THE NUMBER OF WORDS 
@@ -198,37 +236,37 @@ public class NGramGenerator {
                 if (firstChar) {
                     firstChar = false;
                 }
-                temp = temp + currentChar;
+                currentToken.append(currentChar);
                 lastCharWasSpace = false;
             } else {                                                        //not a character (is a space)
 
                 if (!firstBreak && !secondBreak && !lastCharWasSpace) {     //end of first word 
-                    temp = temp + currentChar;                              //add space to temp
+                    currentToken.append(currentChar);                             //add space
                     firstBreak = true;                                      //set firstBreak, i.e. first word finished
                     //position = i;                                         //set position ready for next word
                 } else if (firstBreak && !secondBreak && !lastCharWasSpace) { //end of second word 
-                    temp = temp + currentChar;                              //add space to temp
+                    currentToken.append(currentChar);                         //add space 
                     secondBreak = true;                                     //set firstBreak, i.e. first word finished
                                                                             //no need to set position
                 } else if (firstBreak && secondBreak &&!thirdBreak && !lastCharWasSpace) { //end of third word
-                    temp = temp + currentChar;
+                    currentToken.append(currentChar);
                     thirdBreak = true;
                     
                 } else if (firstBreak && secondBreak && thirdBreak &&!lastCharWasSpace) { //end of fourth word
-                    nGrams.add(temp);                                       //add temp to arraylist
+                    tokens.add(currentToken.toString());                                       //add token to arraylist
                     firstChar = true;                                       //set first char ready for next word
                     i = position;                                           //move i back to middle of last pair
                     firstBreak = false;                                     //do I need this?
                     secondBreak = false;
                     thirdBreak = false;
-                    temp = "";                                              //reset temp to "";
+                    currentToken.setLength(0);                                             //reset token
                 } else if (lastCharWasSpace) {                              //more than one whitespace
-                    temp = temp + currentChar;                              //add space to temp
+                    currentToken.append(currentChar);                             //add space
                 }
                 lastCharWasSpace = true;
             }
         }
-        return nGrams;
+        return tokens;
 
     }
 }
