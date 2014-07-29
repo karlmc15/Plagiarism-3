@@ -121,8 +121,6 @@ public class View extends JFrame implements ActionListener {
             if (radio1.isSelected()) {
                 if (!generated1) {
                     Plagiarism.generateTokens(1);
-                    //resultsPane.setText(Plagiarism.getMatches(minTFIDF, maxPostings, Plagiarism.dictionaryMap1gram, Plagiarism.inverseDocFreqMap1gram));
-                    //Plagiarism.aggregate(Plagiarism.dictionaryMap1gram);
                     generated1 = true;
                 }
                 resultsPane.setText(Plagiarism.getMatches(minTFIDF, maxPostings, Plagiarism.dictionaryMap1gram, Plagiarism.inverseDocFreqMap1gram));
@@ -130,8 +128,6 @@ public class View extends JFrame implements ActionListener {
             } else if (radio2.isSelected()) {
                 if (!generated2) {
                     Plagiarism.generateTokens(2);
-                    //resultsPane.setText(Plagiarism.getMatches(minTFIDF, maxPostings, Plagiarism.dictionaryMap2gram, Plagiarism.inverseDocFreqMap2gram));
-                    //Plagiarism.aggregate(Plagiarism.dictionaryMap2gram);
                     generated2 = true;
                 }
                 resultsPane.setText(Plagiarism.getMatches(minTFIDF, maxPostings, Plagiarism.dictionaryMap2gram, Plagiarism.inverseDocFreqMap2gram));
