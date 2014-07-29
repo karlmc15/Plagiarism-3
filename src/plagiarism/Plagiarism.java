@@ -429,7 +429,5 @@ public class Plagiarism {
                 System.out.println(termEntry.getKey().toString() + " " + termEntry.getValue().toString());
             }
         }
-
     }
-
 }
