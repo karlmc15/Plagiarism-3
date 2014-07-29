@@ -43,7 +43,7 @@ public class Plagiarism {
     public static ArrayList<String> tokensWhiteSpace;
 
     public static ConcurrentHashMap<String, Integer> tallyChart = new ConcurrentHashMap<String, Integer>();
-    
+
     public static String tempString;
 
     public Plagiarism() {
@@ -75,7 +75,7 @@ public class Plagiarism {
                         calculateTFandIDFapprox(docContents, docName, collectionSize, tokens1grams, docLength, dictionaryMap1gram, inverseDocFreqMap1gram);
                     } else if (k == 2) {
                         tokens2grams = ngg.generateTwoGrams(docContents);
-                        calculateTFandIDF(docContents, docName, collectionSize, tokens2grams, docLength, dictionaryMap2gram, inverseDocFreqMap2gram);
+                        calculateTFandIDFapprox(docContents, docName, collectionSize, tokens2grams, docLength, dictionaryMap2gram, inverseDocFreqMap2gram);
                     } else if (k == 3) {
                         tokens3grams = ngg.generateThreeGrams(docContents);
                         calculateTFandIDF(docContents, docName, collectionSize, tokens3grams, docLength, dictionaryMap3gram, inverseDocFreqMap3gram);
@@ -154,7 +154,9 @@ public class Plagiarism {
                     if (inThisDoc) {
 
                         //iDF doesn't change, just need to change TF
-                        int newFrequency = (Integer.parseInt(posting[FREQ])) + 1; //add one to the frequency
+                        int newFrequency = (Integer.parseInt(posting[FREQ])); //add one to the frequency
+                        newFrequency = newFrequency + 1;
+                        System.out.println("In this doc, new frequency: " + newFrequency);
                         System.out.println(currentToken + newFrequency);
                         float newTermFrequency = newFrequency / docLength; // calculate a new TF
                         posting[FREQ] = String.valueOf(newFrequency); //update the posting with the new frequency
@@ -173,7 +175,7 @@ public class Plagiarism {
                         inverseDocFreqMap.put(currentToken, temp);
 
                         // 2) add new posting(array) 
-                        float newTermFrequency = 1 / docLength;
+                        double newTermFrequency = 1.0 / docLength;
                         double newTFIDFweight = temp[1] * newTermFrequency;
                         String[] newPosting = {docName, "1", String.valueOf(newTermFrequency), String.valueOf(newTFIDFweight)};
                         currentPostingsList.add(newPosting);
@@ -218,7 +220,7 @@ public class Plagiarism {
 
         for (int j = 0; j < tokens.size(); j++) {
             String currentToken = tokens.get(j).toString();
-
+            System.out.println("new token: " + currentToken);
             if (dictionaryMap.isEmpty()) { //add first term
                 //add this occurence to the inverseDocFreqMap
                 Double[] doubleArray = {1.0, Math.log(collectionSize / 1.0)}; //1.0 because this is the first occurance
@@ -229,15 +231,18 @@ public class Plagiarism {
                 ArrayList<String[]> newPostingsList = new ArrayList<String[]>();
                 newPostingsList.add(newPosting);
                 dictionaryMap.put(currentToken, newPostingsList);
+                System.out.println("adding first: " + currentToken);
 
             } else {
                 if (dictionaryMap.containsKey(currentToken)) { //word is in hashmap - 2 possibilities: in this doc, or not
                     inMapAlready = true;
+                    System.out.println(currentToken + " is already in map");
                     currentPostingsList = (ArrayList) dictionaryMap.get(currentToken); //get the arraylist
 
                     for (int i = 0; i < currentPostingsList.size(); i++) {
                         if (currentPostingsList.get(i)[DOC_NAME].equals(docName)) { //if word already in this document
                             inThisDoc = true;
+                            System.out.println(currentToken + " is already in this doc");
                             posting = currentPostingsList.get(i);
                             position = i;
                             break;
@@ -245,9 +250,11 @@ public class Plagiarism {
                     }
                     if (inThisDoc) {
                         //iDF doesn't change, just need to change TF
-                        int newFrequency = (Integer.parseInt(posting[FREQ])) + 1; //add one to the frequency
-                        System.out.println(currentToken + newFrequency);
+                        int newFrequency = (Integer.parseInt(posting[FREQ])); //add one to the frequency
+                        newFrequency = newFrequency + 1;
+                        System.out.println("new frequency is: " + newFrequency);
                         float newTermFrequency = newFrequency / docLength; // calculate a new TF
+                        System.out.println("new term frequency is: " + newTermFrequency);
                         posting[FREQ] = String.valueOf(newFrequency); //update the posting with the new frequency
                         posting[TERM_FREQ] = String.valueOf(newTermFrequency);
                         currentPostingsList.set(position, posting); //update arraylist
@@ -268,47 +275,94 @@ public class Plagiarism {
                         currentPostingsList.add(newPosting);
                     }
                 } else { //word not in hashmap - first check if it matches approximately:
+                    System.out.println("checking for approximate match");
                     Iterator it = dictionaryMap.entrySet().iterator();
                     while (it.hasNext()) {
                         Map.Entry termEntry = (Map.Entry) it.next();
                         String key = (String) termEntry.getKey();
                         Double levScore = lev.score(currentToken, key);
                         if (levScore.equals(-1.0)) { //we have an approximate match - add posting to postings list
+                            System.out.println("approx match found!");
                             approxMatch = true;
                             tempString = key;
                             break;
-                            
+
                         }
                     }
                 }
 
                 if (approxMatch) {
-                    // 1) update inverseDocFreqMap
-                    Double[] temp = (Double[]) inverseDocFreqMap.get(tempString);
-                    Double x = temp[0] + 1.0; //add 1 to no. of docs
-                    temp[0] = x;
-                    temp[1] = Math.log(collectionSize / x); //recalculate IDF
-                    inverseDocFreqMap.put(currentToken, temp);
-                    // 2) add new posting(array) 
-                    float newTermFrequency = 1 / docLength;
-                    double newTFIDFweight = temp[1] * newTermFrequency;
-                    String[] newPosting = {docName, "1", String.valueOf(newTermFrequency), String.valueOf(newTFIDFweight)};
-                    currentPostingsList.add(newPosting);
-                } else {
-                    //add new entry to inverseDocFreqMap, frequency is one
-                    Double[] doubleArray = {1.0, Math.log(collectionSize / 1.0)};
-                    inverseDocFreqMap.put(currentToken, doubleArray);
-                    //add new posting to dictionaryMap
-                    double newTermFrequency = 1.0 / docLength;
-                    String[] newPosting = {docName, "1", String.valueOf(newTermFrequency), "0"};
-                    ArrayList<String[]> newPostingsList = new ArrayList<String[]>();
-                    newPostingsList.add(newPosting);
-                    dictionaryMap.put(currentToken, newPostingsList);
+                    //add as if an exact match had been found
+
+                    //first check if in this doc
+                    currentPostingsList = (ArrayList) dictionaryMap.get(tempString); //get the arraylist
+                    for (int i = 0; i < currentPostingsList.size(); i++) {
+                        if (currentPostingsList.get(i)[DOC_NAME].equals(docName)) { //if word already in this document
+                            inThisDoc2 = true;
+                            System.out.println(currentToken + " is already in this doc");
+                            posting = currentPostingsList.get(i);
+                            position = i;
+                            break;
+                        }
+                    }
+
+                    if (inThisDoc2) {
+                        //iDF doesn't change, just need to change TF
+                        System.out.println("updating frequency and term frequency for approximate match");
+                        int newFrequency = (Integer.parseInt(posting[FREQ])); //add one to the frequency
+                        newFrequency = newFrequency + 1;
+                        System.out.println("new frequency is: " + newFrequency);
+                        float newTermFrequency = newFrequency / docLength; // calculate a new TF
+                        System.out.println("new term frequency is: " + newTermFrequency);
+                        posting[FREQ] = String.valueOf(newFrequency); //update the posting with the new frequency
+                        posting[TERM_FREQ] = String.valueOf(newTermFrequency);
+                        currentPostingsList.set(position, posting); //update arraylist
+                        dictionaryMap.put(tempString, currentPostingsList);
+                        inThisDoc2 = false;
+
+                    } else { //not in this doc: 
+                        // 1) update inverseDocFreqMap (i.e. add 1 to the number of docs containing this token, and re-calculte IDF)
+                        Double[] temp = (Double[]) inverseDocFreqMap.get(tempString);
+                        Double x = temp[0] + 1.0; //add 1 to no. of docs
+                        temp[0] = x;
+                        temp[1] = Math.log(collectionSize / x); //recalculate IDF
+                        inverseDocFreqMap.put(currentToken, temp);
+                        // 2) add new posting(array) 
+                        float newTermFrequency = 1 / docLength;
+                        double newTFIDFweight = temp[1] * newTermFrequency;
+                        String[] newPosting = {docName, "1", String.valueOf(newTermFrequency), String.valueOf(newTFIDFweight)};
+                        currentPostingsList.add(newPosting);
+                    }
                 }
+
+                //finally add a new entry with the actual token
+                //add new entry to inverseDocFreqMap, frequency is one
+                Double[] doubleArray = {1.0, Math.log(collectionSize / 1.0)};
+                inverseDocFreqMap.put(currentToken, doubleArray);
+                //add new posting to dictionaryMap
+                double newTermFrequency = 1.0 / docLength;
+                String[] newPosting = {docName, "1", String.valueOf(newTermFrequency), "0"};
+                ArrayList<String[]> newPostingsList = new ArrayList<String[]>();
+                newPostingsList.add(newPosting);
+                dictionaryMap.put(currentToken, newPostingsList);
+                
+                
             }
+
         }
     }
 
+    public static void addApproxTokens(String docContents, String docName, int collectionSize,
+            ArrayList tokens, float docLength, ConcurrentHashMap dictionaryMap, ConcurrentHashMap inverseDocFreqMap){
+        Iterator it4 = dictionaryMap.entrySet().iterator();
+        while (it4.hasNext()){
+            Map.Entry termEntry = (Map.Entry) it4.next(){
+            
+        }
+        }
+        
+    }
+    
     public static void calculateTFIDF(ConcurrentHashMap dictionaryMap, ConcurrentHashMap inverseDocFreqMap) {
 
         Iterator it3 = dictionaryMap.entrySet().iterator();
@@ -355,7 +409,7 @@ public class Plagiarism {
             int tFiDF = 3;
 
             for (int i = 0; i < postingsList.size(); i++) {
-                if ((Double.parseDouble(postingsList.get(i)[tFiDF]) > minimumTFIDF) && (postingsList.size() >= 2) && (postingsList.size() <= quantityOfPostings)) {
+                if ((Double.parseDouble(postingsList.get(i)[tFiDF]) >= minimumTFIDF) && (postingsList.size() >= 1) && (postingsList.size() <= quantityOfPostings)) {
                     System.out.print("'" + key + "'");
                     output = output + "Key: '" + key + "'\n";
                     System.out.print(", tFiDF: " + postingsList.get(i)[tFiDF]);
@@ -366,11 +420,10 @@ public class Plagiarism {
                     output = output + ", iDF: " + IDF;
                     System.out.print(", Document: " + postingsList.get(i)[documentName]);
                     output = output + ", Document: " + postingsList.get(i)[documentName];
-                    System.out.print(", Frequency: " + postingsList.get(i)[frequency]);
-                    output = output + ", Frequency: " + postingsList.get(i)[frequency];
-
-                    System.out.println(postingsList.size());
-                    output = output + postingsList.size() + "\n";
+                    System.out.print(", Document Frequency: " + postingsList.get(i)[frequency]);
+                    output = output + ", Document Frequency: " + postingsList.get(i)[frequency];
+                    System.out.println(", Posting list size: " + postingsList.size());
+                    output = output + ", Posting list size: " + postingsList.size() + "\n";
 
                     for (int j = 0; j < postingsList.size(); j++) {
                         System.out.print(postingsList.get(j)[documentName] + ", ");
