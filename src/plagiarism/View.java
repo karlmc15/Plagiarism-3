@@ -26,13 +26,13 @@ public class View extends JFrame implements ActionListener {
     private final JTextArea resultsPane;
     private final JRadioButtonMenuItem radio1, radio2, radio3, radio4, radio5, radio6;
     private final ButtonGroup buttongroup;
+    private final JRadioButtonMenuItem approx;
+    private final ButtonGroup buttongroup2;
     boolean generated1, generated2, generated3, generated4, generated5, generated6 = false;
     private final JScrollPane scrollpane;
     public Double minTFIDF;
     public Integer maxPostings;
-
     private final JButton getMatches;
-
     public Plagiarism plagiarism = new Plagiarism();
 
     public View() {
@@ -72,6 +72,12 @@ public class View extends JFrame implements ActionListener {
         panel.add(radio4, "wrap");
         panel.add(radio5, "wrap");
         panel.add(radio6, "wrap");
+
+        this.approx = new JRadioButtonMenuItem("Include Approximate Values");
+        panel.add(approx, "wrap");
+        approx.addActionListener(this);
+        this.buttongroup2 = new ButtonGroup();
+        buttongroup2.add(approx);
 
         //add action listeners to enable "get matches" button
         radio1.addActionListener(this);
@@ -113,49 +119,55 @@ public class View extends JFrame implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
 
+        Boolean includeApproximateMatches = false;
+
         if (e.getSource() == getMatches) {
             minTFIDF = Double.parseDouble(textField1.getText());
             maxPostings = Integer.parseInt(textField2.getText());
             getMatches.setEnabled(true);
 
+            if (approx.isSelected()) {
+                includeApproximateMatches = true;
+            }
+
             if (radio1.isSelected()) {
                 if (!generated1) {
-                    Plagiarism.generateTokens(1);
+                    Plagiarism.generateTokens(1, includeApproximateMatches);
                     generated1 = true;
                 }
                 resultsPane.setText(Plagiarism.getMatches(minTFIDF, maxPostings, Plagiarism.dictionaryMap1gram, Plagiarism.inverseDocFreqMap1gram));
 
             } else if (radio2.isSelected()) {
                 if (!generated2) {
-                    Plagiarism.generateTokens(2);
+                    Plagiarism.generateTokens(2, includeApproximateMatches);
                     generated2 = true;
                 }
                 resultsPane.setText(Plagiarism.getMatches(minTFIDF, maxPostings, Plagiarism.dictionaryMap2gram, Plagiarism.inverseDocFreqMap2gram));
 
             } else if (radio3.isSelected()) {
                 if (!generated3) {
-                    Plagiarism.generateTokens(3);
+                    Plagiarism.generateTokens(3, includeApproximateMatches);
                     generated3 = true;
                 }
                 resultsPane.setText(Plagiarism.getMatches(minTFIDF, maxPostings, Plagiarism.dictionaryMap3gram, Plagiarism.inverseDocFreqMap3gram));
 
             } else if (radio4.isSelected()) {
                 if (!generated4) {
-                    Plagiarism.generateTokens(4);
+                    Plagiarism.generateTokens(4, includeApproximateMatches);
                     generated4 = true;
                 }
                 resultsPane.setText(Plagiarism.getMatches(minTFIDF, maxPostings, Plagiarism.dictionaryMap4gram, Plagiarism.inverseDocFreqMap4gram));
 
             } else if (radio5.isSelected()) {
                 if (!generated5) {
-                    Plagiarism.generateTokens(5);
+                    Plagiarism.generateTokens(5, includeApproximateMatches);
                     generated5 = true;
                 }
                 resultsPane.setText(Plagiarism.getMatches(minTFIDF, maxPostings, Plagiarism.dictionaryMap2gramBasic, Plagiarism.inverseDocFreqMap2gramBasic));
 
             } else if (radio6.isSelected()) {
                 if (!generated6) {
-                    Plagiarism.generateTokens(6);
+                    Plagiarism.generateTokens(6, includeApproximateMatches);
                     generated6 = true;
                 }
                 resultsPane.setText(Plagiarism.getMatches(minTFIDF, maxPostings, Plagiarism.dictionaryMapWhiteSpace, Plagiarism.inverseDocFreqMapWhiteSpace));
@@ -164,6 +176,7 @@ public class View extends JFrame implements ActionListener {
 
         } else if (e.getSource()
                 == printTally) {
+            Plagiarism.aggregate(Plagiarism.dictionaryMap2gram, Plagiarism.inverseDocFreqMap2gram);
             Plagiarism.printTally(Plagiarism.tallyChart, Plagiarism.inverseDocFreqMap2gram);
         } else if (e.getSource()
                 == radio1 || e.getSource() == radio2 || e.getSource() == radio3 || e.getSource() == radio4 || e.getSource() == radio5 || e.getSource() == radio6) {
