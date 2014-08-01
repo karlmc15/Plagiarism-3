@@ -593,7 +593,7 @@ public class Plagiarism {
 
                     Double[] currentIDFArray = (Double[]) inverseDocFreqMap.get(token);
                     
-                    if (currentIDFArray[IDF] > 3){
+                    if (currentIDFArray[IDF] > 2){
                     //if ((Double.parseDouble(postingsList.get(i)[TFIDF_WEIGHT])) > 0.01 || (Double.parseDouble(postingsList.get(i)[TFIDF_WEIGHT])) > 0.01) {
 
                         if (tallyChart.containsKey(combinedName)) {
@@ -621,7 +621,7 @@ public class Plagiarism {
             //Double idfValue = currentIDFArray[IDF];
 
             int count = Integer.parseInt(termEntry.getValue().toString());
-            if (count > 40) {
+            if (count > 10) {
                 System.out.println(termEntry.getKey().toString() + " " + termEntry.getValue().toString());
             }
         }

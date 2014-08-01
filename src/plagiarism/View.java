@@ -176,7 +176,8 @@ public class View extends JFrame implements ActionListener {
 
         } else if (e.getSource()
                 == printTally) {
-            Plagiarism.aggregate(Plagiarism.dictionaryMap2gram, Plagiarism.inverseDocFreqMap2gram);
+            //Plagiarism.aggregate(Plagiarism.dictionaryMap2gram, Plagiarism.inverseDocFreqMap2gram);
+            Plagiarism.aggregate(Plagiarism.dictionaryMapWhiteSpace, Plagiarism.inverseDocFreqMapWhiteSpace);
             Plagiarism.printTally(Plagiarism.tallyChart, Plagiarism.inverseDocFreqMap2gram);
         } else if (e.getSource()
                 == radio1 || e.getSource() == radio2 || e.getSource() == radio3 || e.getSource() == radio4 || e.getSource() == radio5 || e.getSource() == radio6) {
