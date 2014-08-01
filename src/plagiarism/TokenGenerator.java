@@ -3,7 +3,7 @@ package plagiarism;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
-public class NGramGenerator {
+public class TokenGenerator {
     
 //    public static void main (String[] args){
 //        String testString = "this is a       test";

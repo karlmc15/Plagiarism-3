@@ -35,7 +35,7 @@ public class TwoGrams {
         int collectionSize = files.length; //total number of docs in collection
 
         ReadFile rf = new ReadFile();
-        NGramGenerator ngg = new NGramGenerator();
+        TokenGenerator ngg = new TokenGenerator();
         ArrayList<String> al = new ArrayList<String>();
 
         for (int i = 0; i < files.length; i++) {
