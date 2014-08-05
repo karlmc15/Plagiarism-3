@@ -19,9 +19,8 @@ import plagiarism.Plagiarism;
 public class View extends JFrame implements ActionListener {
 
     private final JButton printTally;
-    private final JTextField textField1;
-    private final JTextField textField2;
-    private final JLabel label1, label2, label3;
+    private final JTextField textField1, textField2, textField3;
+    private final JLabel label1, label2, label3, label4;
     private final JLabel spacer;
     private final JTextArea resultsPane;
     private final JRadioButtonMenuItem radio1, radio2, radio3, radio4, radio5, radio6;
@@ -31,7 +30,7 @@ public class View extends JFrame implements ActionListener {
     boolean generated1, generated2, generated3, generated4, generated5, generated6 = false;
     private final JScrollPane scrollpane;
     public Double minTFIDF;
-    public Integer maxPostings;
+    public Integer maxPostings, minMatches;
     private final JButton getMatches;
     public Plagiarism plagiarism = new Plagiarism();
 
@@ -44,6 +43,8 @@ public class View extends JFrame implements ActionListener {
         JPanel panel = new JPanel(new MigLayout());
 
         this.add(panel);
+        
+        
 
         this.label1 = new JLabel("Enter minimum tFiDF:");
         panel.add(label1);
@@ -109,6 +110,12 @@ public class View extends JFrame implements ActionListener {
         this.scrollpane = new JScrollPane(resultsPane);
 
         panel.add(scrollpane, "span");
+        
+        this.label4 = new JLabel("Enter minimum number of matches");
+        panel.add(label4);
+        
+        this.textField3 = new JTextField(20);
+        panel.add(textField3, "wrap");
 
         this.printTally = new JButton("Print tally");
         this.printTally.addActionListener(this);
@@ -124,6 +131,7 @@ public class View extends JFrame implements ActionListener {
         if (e.getSource() == getMatches) {
             minTFIDF = Double.parseDouble(textField1.getText());
             maxPostings = Integer.parseInt(textField2.getText());
+            
             getMatches.setEnabled(true);
 
             if (approx.isSelected()) {
@@ -176,9 +184,26 @@ public class View extends JFrame implements ActionListener {
 
         } else if (e.getSource()
                 == printTally) {
-            //Plagiarism.aggregate(Plagiarism.dictionaryMap2gram, Plagiarism.inverseDocFreqMap2gram);
-            Plagiarism.aggregate(Plagiarism.dictionaryMapWhiteSpace, Plagiarism.inverseDocFreqMapWhiteSpace);
-            Plagiarism.printTally(Plagiarism.tallyChart, Plagiarism.inverseDocFreqMap2gram);
+            minMatches = Integer.parseInt(textField3.getText());
+            if (radio1.isSelected()){
+                Plagiarism.aggregate(Plagiarism.dictionaryMap1gram, Plagiarism.inverseDocFreqMap1gram);
+                Plagiarism.printTally(Plagiarism.tallyChart, Plagiarism.inverseDocFreqMap1gram, minMatches);
+            } else if (radio2.isSelected()){
+                Plagiarism.aggregate(Plagiarism.dictionaryMap2gram, Plagiarism.inverseDocFreqMap2gram);
+                Plagiarism.printTally(Plagiarism.tallyChart, Plagiarism.inverseDocFreqMap2gram, minMatches);
+            } else if (radio3.isSelected()){
+                Plagiarism.aggregate(Plagiarism.dictionaryMap3gram, Plagiarism.inverseDocFreqMap3gram);
+                Plagiarism.printTally(Plagiarism.tallyChart, Plagiarism.inverseDocFreqMap3gram, minMatches);
+            } else if (radio4.isSelected()){
+                Plagiarism.aggregate(Plagiarism.dictionaryMap4gram, Plagiarism.inverseDocFreqMap4gram);
+                Plagiarism.printTally(Plagiarism.tallyChart, Plagiarism.inverseDocFreqMap4gram, minMatches);
+            } else if (radio5.isSelected()){
+                Plagiarism.aggregate(Plagiarism.dictionaryMap2gramBasic, Plagiarism.inverseDocFreqMap2gramBasic);
+                Plagiarism.printTally(Plagiarism.tallyChart, Plagiarism.inverseDocFreqMap2gramBasic, minMatches);
+            } else if (radio6.isSelected()){
+                Plagiarism.aggregate(Plagiarism.dictionaryMapWhiteSpace, Plagiarism.inverseDocFreqMapWhiteSpace);
+                Plagiarism.printTally(Plagiarism.tallyChart, Plagiarism.inverseDocFreqMapWhiteSpace, minMatches);
+            }
         } else if (e.getSource()
                 == radio1 || e.getSource() == radio2 || e.getSource() == radio3 || e.getSource() == radio4 || e.getSource() == radio5 || e.getSource() == radio6) {
             getMatches.setEnabled(true);

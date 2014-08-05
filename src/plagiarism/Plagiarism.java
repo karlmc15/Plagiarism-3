@@ -53,9 +53,9 @@ public class Plagiarism {
         System.out.println("generateTokens running");
         //read all files in a directory
         //http://stackoverflow.com/questions/4917326/how-to-iterate-over-the-files-of-a-certain-directory-in-java
-        //File path = new File("C:\\Users\\David\\Desktop\\code20");
+        File path = new File("C:\\Users\\David\\Desktop\\code");
         //C:\Users\c1343067.X7054D28FCA47.000\Desktop\code3
-        File path = new File("C:\\Users\\c1343067.X7054D28FCA47.000\\Desktop\\code");
+        //File path = new File("C:\\Users\\c1343067.X7054D28FCA47.000\\Desktop\\code");
         //File path = new File("C:\\Users\\c1343067.X7054D28FCAE8\\Desktop\\code3");
         File[] files = path.listFiles();
         int collectionSize = files.length; //total number of docs in collection
@@ -609,7 +609,7 @@ public class Plagiarism {
         }
     }
 
-    public static void printTally(ConcurrentHashMap tallyChart, ConcurrentHashMap inverseDocFreqMap) {
+    public static void printTally(ConcurrentHashMap tallyChart, ConcurrentHashMap inverseDocFreqMap, int noOfMatches) {
 
         Iterator it = tallyChart.entrySet().iterator();
         while (it.hasNext()) {
@@ -621,7 +621,7 @@ public class Plagiarism {
             //Double idfValue = currentIDFArray[IDF];
 
             int count = Integer.parseInt(termEntry.getValue().toString());
-            if (count > 10) {
+            if (count > noOfMatches) {
                 System.out.println(termEntry.getKey().toString() + " " + termEntry.getValue().toString());
             }
         }
