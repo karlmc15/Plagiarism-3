@@ -3,32 +3,24 @@ package plagiarism;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
-public class TokenGenerator {
+public class NGramGenerator {
     
 //    public static void main (String[] args){
-//        String testString = "this is a ;      test} string";
+//        String testString = "this is a; test";
 //        ArrayList testList = splitOnJavaSyntax(testString);
 //        for (int i = 0; i<testList.size(); i++){
 //            System.out.println(testList.get(i));           
 //        }
 //    }
     
+    
+    
+    
     //takes a single document, and adds all tokens to an array list
     public ArrayList<String> generateOneGrams(String docContents) {
         StringTokenizer st = new StringTokenizer(docContents);
         
         ArrayList<String> tokens = new ArrayList<String>();
-        
-        while (st.hasMoreTokens()) {
-            tokens.add(st.nextToken());
-        }
-        return tokens;
-    }
-    
-    public ArrayList<String> splitOnJavaSyntax(String docContents) {
-        StringTokenizer st = new StringTokenizer(docContents, ";");
-        ArrayList<String> tokens = new ArrayList<String>();
-  
         
         while (st.hasMoreTokens()) {
             tokens.add(st.nextToken());

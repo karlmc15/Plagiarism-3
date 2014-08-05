@@ -24,11 +24,11 @@ public class View extends JFrame implements ActionListener {
     private final JLabel label1, label2, label3;
     private final JLabel spacer;
     private final JTextArea resultsPane;
-    private final JRadioButtonMenuItem radio1, radio2, radio3, radio4, radio5, radio6;
+    private final JRadioButtonMenuItem radio1, radio2, radio3, radio4, radio5, radio6, radio7;
     private final ButtonGroup buttongroup;
     private final JRadioButtonMenuItem approx;
     private final ButtonGroup buttongroup2;
-    boolean generated1, generated2, generated3, generated4, generated5, generated6 = false;
+    boolean generated1, generated2, generated3, generated4, generated5, generated6, generated7 = false;
     private final JScrollPane scrollpane;
     public Double minTFIDF;
     public Integer maxPostings;
@@ -66,12 +66,14 @@ public class View extends JFrame implements ActionListener {
         this.radio4 = new JRadioButtonMenuItem("Four-grams");
         this.radio5 = new JRadioButtonMenuItem("Basic Two-grams");
         this.radio6 = new JRadioButtonMenuItem("WhiteSpace");
+        this.radio7 = new JRadioButtonMenuItem("Java Terminators");
         panel.add(radio1, "wrap");
         panel.add(radio2, "wrap");
         panel.add(radio3, "wrap");
         panel.add(radio4, "wrap");
         panel.add(radio5, "wrap");
         panel.add(radio6, "wrap");
+        panel.add(radio7, "wrap");
 
         this.approx = new JRadioButtonMenuItem("Include Approximate Values");
         panel.add(approx, "wrap");
@@ -86,6 +88,7 @@ public class View extends JFrame implements ActionListener {
         radio4.addActionListener(this);
         radio5.addActionListener(this);
         radio6.addActionListener(this);
+        radio7.addActionListener(this);
 
         this.buttongroup = new ButtonGroup();
         buttongroup.add(radio1);
@@ -94,6 +97,7 @@ public class View extends JFrame implements ActionListener {
         buttongroup.add(radio4);
         buttongroup.add(radio5);
         buttongroup.add(radio6);
+        buttongroup.add(radio7);
 
         this.getMatches = new JButton("Get Matches");
         getMatches.addActionListener(this);
@@ -166,21 +170,51 @@ public class View extends JFrame implements ActionListener {
                 resultsPane.setText(Plagiarism.getMatches(minTFIDF, maxPostings, Plagiarism.dictionaryMap2gramBasic, Plagiarism.inverseDocFreqMap2gramBasic));
 
             } else if (radio6.isSelected()) {
-                if (!generated6) {
+                if (!generated5) {
                     Plagiarism.generateTokens(6, includeApproximateMatches);
-                    generated6 = true;
+                    generated5 = true;
                 }
                 resultsPane.setText(Plagiarism.getMatches(minTFIDF, maxPostings, Plagiarism.dictionaryMapWhiteSpace, Plagiarism.inverseDocFreqMapWhiteSpace));
+
+            } else if (radio7.isSelected()) {
+                if (!generated7) {
+                    Plagiarism.generateTokens(7, includeApproximateMatches);
+                    generated7 = true;
+                }
+                resultsPane.setText(Plagiarism.getMatches(minTFIDF, maxPostings, Plagiarism.dictionaryMapJava, Plagiarism.inverseDocFreqMapJava));
+
 
             }
 
         } else if (e.getSource()
                 == printTally) {
             //Plagiarism.aggregate(Plagiarism.dictionaryMap2gram, Plagiarism.inverseDocFreqMap2gram);
-            Plagiarism.aggregate(Plagiarism.dictionaryMapWhiteSpace, Plagiarism.inverseDocFreqMapWhiteSpace);
-            Plagiarism.printTally(Plagiarism.tallyChart, Plagiarism.inverseDocFreqMap2gram);
+            if (radio1.isSelected()) {
+                Plagiarism.aggregate(Plagiarism.dictionaryMap1gram, Plagiarism.inverseDocFreqMap1gram);
+                Plagiarism.printTally(Plagiarism.tallyChart, Plagiarism.inverseDocFreqMap1gram);
+            } else if (radio2.isSelected()) {
+                Plagiarism.aggregate(Plagiarism.dictionaryMap2gram, Plagiarism.inverseDocFreqMap2gram);
+                Plagiarism.printTally(Plagiarism.tallyChart, Plagiarism.inverseDocFreqMap2gram);
+            } else if (radio3.isSelected()) {
+                Plagiarism.aggregate(Plagiarism.dictionaryMap3gram, Plagiarism.inverseDocFreqMap3gram);
+                Plagiarism.printTally(Plagiarism.tallyChart, Plagiarism.inverseDocFreqMap3gram);
+            } else if (radio4.isSelected()) {
+                Plagiarism.aggregate(Plagiarism.dictionaryMap4gram, Plagiarism.inverseDocFreqMap4gram);
+                Plagiarism.printTally(Plagiarism.tallyChart, Plagiarism.inverseDocFreqMap4gram);
+            } else if (radio5.isSelected()) {
+                Plagiarism.aggregate(Plagiarism.dictionaryMap2gramBasic, Plagiarism.inverseDocFreqMap2gramBasic);
+                Plagiarism.printTally(Plagiarism.tallyChart, Plagiarism.inverseDocFreqMap2gramBasic);
+            } else if (radio6.isSelected()) {
+                Plagiarism.aggregate(Plagiarism.dictionaryMapWhiteSpace, Plagiarism.inverseDocFreqMapWhiteSpace);
+                Plagiarism.printTally(Plagiarism.tallyChart, Plagiarism.inverseDocFreqMap2gram);
+            } else if (radio7.isSelected()) {
+                Plagiarism.aggregate(Plagiarism.dictionaryMapJava, Plagiarism.inverseDocFreqMapJava);
+                Plagiarism.printTally(Plagiarism.tallyChart, Plagiarism.inverseDocFreqMapJava);
+            } 
+
         } else if (e.getSource()
-                == radio1 || e.getSource() == radio2 || e.getSource() == radio3 || e.getSource() == radio4 || e.getSource() == radio5 || e.getSource() == radio6) {
+                == radio1 || e.getSource() == radio2 || e.getSource() == radio3 || e.getSource() == radio4
+                || e.getSource() == radio5 || e.getSource() == radio6 || e.getSource() == radio7) {
             getMatches.setEnabled(true);
         }
     }
