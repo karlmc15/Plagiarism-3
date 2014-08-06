@@ -35,6 +35,9 @@ public class Plagiarism {
     public static ConcurrentHashMap<String, ArrayList<String[]>> dictionaryMapWhiteSpace = new ConcurrentHashMap<String, ArrayList<String[]>>();
     public static ConcurrentHashMap<String, Double[]> inverseDocFreqMapWhiteSpace = new ConcurrentHashMap<String, Double[]>();
     public static ArrayList<String> tokensWhiteSpace;
+    public static ConcurrentHashMap<String, ArrayList<String[]>> dictionaryMapJava = new ConcurrentHashMap<String, ArrayList<String[]>>();
+    public static ConcurrentHashMap<String, Double[]> inverseDocFreqMapJava = new ConcurrentHashMap<String, Double[]>();
+    public static ArrayList<String> tokensJava;
     public static ConcurrentHashMap<String, Integer> tallyChart = new ConcurrentHashMap<String, Integer>();
     //CONSTANTS
     final static int DOC_COUNT = 0;
@@ -90,6 +93,9 @@ public class Plagiarism {
                     } else if (k == 6) {
                         tokensWhiteSpace = generator.generateSpaces(docContents);
                         calculateTFandIDF(docContents, docName, collectionSize, tokensWhiteSpace, docLength, dictionaryMapWhiteSpace, inverseDocFreqMapWhiteSpace);
+                    } else if (k == 7) {
+                        tokensJava = generator.splitOnJavaSyntax(docContents);
+                        calculateTFandIDF(docContents, docName, collectionSize, tokensJava, docLength, dictionaryMapJava, inverseDocFreqMapJava);
                     }
                 } catch (IOException ioe) {
                     System.out.println("error");
@@ -130,6 +136,9 @@ public class Plagiarism {
                         } else if (k == 6) {
                             tokensWhiteSpace = generator.generateSpaces(docContents);
                             reCalculateTFandIDFwithApproxValues(docContents, docName, collectionSize, tokensWhiteSpace, docLength, dictionaryMapWhiteSpace, inverseDocFreqMapWhiteSpace);
+                        } else if (k == 7) {
+                            tokensJava = generator.generateSpaces(docContents);
+                            reCalculateTFandIDFwithApproxValues(docContents, docName, collectionSize, tokensJava, docLength, dictionaryMapJava, inverseDocFreqMapJava);
                         }
                         long endTime = System.nanoTime();
                         System.out.println("that took :" + (endTime - startTime));
@@ -152,6 +161,9 @@ public class Plagiarism {
             calculateTFIDF(dictionaryMap2gramBasic, inverseDocFreqMap2gramBasic);
         } else if (k == 6) {
             calculateTFIDF(dictionaryMapWhiteSpace, inverseDocFreqMapWhiteSpace);
+        } else if (k == 7) {
+            calculateTFIDF(dictionaryMapJava, inverseDocFreqMapJava);
+
         }
     }
 
@@ -592,9 +604,9 @@ public class Plagiarism {
                     String combinedName = postingsList.get(i)[DOC_NAME] + postingsList.get(j)[DOC_NAME];
 
                     Double[] currentIDFArray = (Double[]) inverseDocFreqMap.get(token);
-                    
-                    if (currentIDFArray[IDF] > 2){
-                    //if ((Double.parseDouble(postingsList.get(i)[TFIDF_WEIGHT])) > 0.01 || (Double.parseDouble(postingsList.get(i)[TFIDF_WEIGHT])) > 0.01) {
+
+                    if (currentIDFArray[IDF] > 2) {
+                        //if ((Double.parseDouble(postingsList.get(i)[TFIDF_WEIGHT])) > 0.01 || (Double.parseDouble(postingsList.get(i)[TFIDF_WEIGHT])) > 0.01) {
 
                         if (tallyChart.containsKey(combinedName)) {
                             int count = tallyChart.get(combinedName);
