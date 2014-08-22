@@ -73,7 +73,7 @@ public class Plagiarism {
                 try {
                     String docContents = rf.readFile(files[i].toString());
                     StringTokenizer st = new StringTokenizer(docContents);
-                    float docLength = st.countTokens();
+                    double docLength = st.countTokens();
                     if (k == 1) {
                         tokens1grams = generator.generateOneGrams(docContents);
                         calculateTFandIDF(docContents, docName, collectionSize, tokens1grams, docLength, dictionaryMap1gram, inverseDocFreqMap1gram);
@@ -114,7 +114,7 @@ public class Plagiarism {
 
                         String docContents = rf.readFile(files[i].toString());
                         StringTokenizer tokenizer = new StringTokenizer(docContents);
-                        float docLength = tokenizer.countTokens();
+                        double docLength = tokenizer.countTokens();
                         System.out.println("new doc: " + docName + " count: " + count);
                         long startTime = System.nanoTime();
                         if (k == 1) {
@@ -168,7 +168,7 @@ public class Plagiarism {
     }
 
     public static void calculateTFandIDF(String docContents, String docName, int collectionSize,
-            ArrayList tokens, float docLength, ConcurrentHashMap dictionaryMap, ConcurrentHashMap inverseDocFreqMap) {
+            ArrayList tokens, double docLength, ConcurrentHashMap dictionaryMap, ConcurrentHashMap inverseDocFreqMap) {
 
         ArrayList<String[]> currentPostingsList;
         String[] posting = new String[6];
@@ -205,7 +205,7 @@ public class Plagiarism {
 
                         //iDF doesn't change; update TF
                         int newFrequency = (Integer.parseInt(posting[FREQ]) + 1);
-                        float newTermFrequency = newFrequency / docLength;
+                        double newTermFrequency = newFrequency / docLength;
                         posting[FREQ] = String.valueOf(newFrequency);
                         posting[TERM_FREQ] = String.valueOf(newTermFrequency);
                         currentPostingsList.set(position, posting);
@@ -244,7 +244,7 @@ public class Plagiarism {
     }
 
     public static void calculateTFandIDFapproxNEW(String docContents, String docName, int collectionSize,
-            ArrayList tokens, float docLength, ConcurrentHashMap dictionaryMap, ConcurrentHashMap inverseDocFreqMap) {
+            ArrayList tokens, double docLength, ConcurrentHashMap dictionaryMap, ConcurrentHashMap inverseDocFreqMap) {
         ArrayList<String[]> currentPostingsList;
         String[] posting = new String[6];
 
@@ -285,7 +285,7 @@ public class Plagiarism {
                         //iDF doesn't change, just need to change TF
                         int newFrequency = (Integer.parseInt(posting[FREQ])); //add one to the frequency
                         newFrequency = newFrequency + 1;
-                        float newTermFrequency = newFrequency / docLength; // calculate a new TF
+                        double newTermFrequency = newFrequency / docLength; // calculate a new TF
                         posting[FREQ] = String.valueOf(newFrequency); //update the posting with the new frequency
                         posting[TERM_FREQ] = String.valueOf(newTermFrequency);
                         currentPostingsList.set(position, posting); //update arraylist
@@ -354,7 +354,7 @@ public class Plagiarism {
                                 int newFrequency = (Integer.parseInt(posting[FREQ])); //add one to the frequency
                                 newFrequency = newFrequency + 1;
                                 System.out.println(" new frequency: " + newFrequency);
-                                float newTermFrequency = newFrequency / docLength; // calculate a new TF
+                                double newTermFrequency = newFrequency / docLength; // calculate a new TF
                                 posting[FREQ] = String.valueOf(newFrequency); //update the posting with the new frequency
                                 posting[TERM_FREQ] = String.valueOf(newTermFrequency);
                                 currentPostingsList.set(position, posting); //update arraylist
@@ -415,7 +415,7 @@ public class Plagiarism {
                                 //iDF doesn't change, just need to change TF
                                 int newFrequency = (Integer.parseInt(posting[FREQ])); //add one to the frequency
                                 newFrequency = newFrequency + 1;
-                                float newTermFrequency = newFrequency / docLength; // calculate a new TF
+                                double newTermFrequency = newFrequency / docLength; // calculate a new TF
                                 posting[FREQ] = String.valueOf(newFrequency); //update the posting with the new frequency
                                 posting[TERM_FREQ] = String.valueOf(newTermFrequency);
                                 currentPostingsList.set(position, posting); //update arraylist
@@ -447,8 +447,7 @@ public class Plagiarism {
     }
 
     public static void reCalculateTFandIDFwithApproxValues(String docContents, String docName, int collectionSize,
-            ArrayList tokens, float docLength, ConcurrentHashMap dictionaryMap, ConcurrentHashMap inverseDocFreqMap) {
-
+            ArrayList tokens, double docLength, ConcurrentHashMap dictionaryMap, ConcurrentHashMap inverseDocFreqMap) {
 
         ArrayList<String[]> currentPostingsList;
         String[] posting;
@@ -470,7 +469,6 @@ public class Plagiarism {
                     Boolean matchRecorded = false;
                     for (int i = 0; i < currentPostingsList.size(); i++) {
 
-
                         if (currentPostingsList.get(i)[DOC_NAME].equals(docName)) {
                             posting = currentPostingsList.get(i);
                             int position = i;
@@ -481,7 +479,7 @@ public class Plagiarism {
                                 //iDF doesn't change, just need to change TF
                                 int newFrequency = (Integer.parseInt(posting[FREQ])); //add one to the frequency
                                 newFrequency = newFrequency + 1;
-                                float newTermFrequency = newFrequency / docLength; // calculate a new TF
+                                double newTermFrequency = newFrequency / docLength; // calculate a new TF
                                 posting[FREQ] = String.valueOf(newFrequency); //update the posting with the new frequency
                                 posting[TERM_FREQ] = String.valueOf(newTermFrequency);
                                 currentPostingsList.set(position, posting); //update arraylist
@@ -590,10 +588,11 @@ public class Plagiarism {
      * and records them in the tallyChart
      *
      * @param dictionaryMap
+     * @param inverseDocFreqMap
      */
-    public static void aggregate(ConcurrentHashMap dictionaryMap, ConcurrentHashMap inverseDocFreqMap) {
-        System.out.println("running");
-
+    public static void aggregate(ConcurrentHashMap dictionaryMap, ConcurrentHashMap inverseDocFreqMap, double minIDF) {
+        System.out.println("'aggregate' running");
+        tallyChart.clear();
         Iterator it2 = dictionaryMap.entrySet().iterator();
         while (it2.hasNext()) {
             Map.Entry termEntry = (Map.Entry) it2.next();
@@ -605,7 +604,7 @@ public class Plagiarism {
 
                     Double[] currentIDFArray = (Double[]) inverseDocFreqMap.get(token);
 
-                    if (currentIDFArray[IDF] > 2) {
+                    if (currentIDFArray[IDF] > minIDF) {
                         //if ((Double.parseDouble(postingsList.get(i)[TFIDF_WEIGHT])) > 0.01 || (Double.parseDouble(postingsList.get(i)[TFIDF_WEIGHT])) > 0.01) {
 
                         if (tallyChart.containsKey(combinedName)) {
@@ -621,6 +620,46 @@ public class Plagiarism {
         }
     }
 
+    public static void aggregateWeighted(ConcurrentHashMap dictionaryMap, ConcurrentHashMap inverseDocFreqMap, double minIDF) {
+        System.out.println("'aggregate' running");
+        tallyChart.clear();
+        Iterator it2 = dictionaryMap.entrySet().iterator();
+        while (it2.hasNext()) {
+            Map.Entry termEntry = (Map.Entry) it2.next();
+            String token = (String) termEntry.getKey();
+            ArrayList<String[]> postingsList = (ArrayList) termEntry.getValue();
+            for (int i = 0; i < postingsList.size() - 1; i++) {
+                for (int j = i + 1; j < postingsList.size(); j++) {
+                    String combinedName = postingsList.get(i)[DOC_NAME] + postingsList.get(j)[DOC_NAME];
+
+                    Double[] currentIDFArray = (Double[]) inverseDocFreqMap.get(token);
+
+                    if (currentIDFArray[IDF] > minIDF) {
+                        //if ((Double.parseDouble(postingsList.get(i)[TFIDF_WEIGHT])) > 0.01 || (Double.parseDouble(postingsList.get(i)[TFIDF_WEIGHT])) > 0.01) {
+                        if (currentIDFArray[IDF] > (minIDF * 2)) {
+                            if (tallyChart.containsKey(combinedName)) {
+                                int count = tallyChart.get(combinedName);
+                                count = count + 2;
+                                tallyChart.put(combinedName, count);
+                            } else {
+                                tallyChart.put(combinedName, 2);
+                            }
+                        } else {
+                            if (tallyChart.containsKey(combinedName)) {
+                                int count = tallyChart.get(combinedName);
+                                count++;
+                                tallyChart.put(combinedName, count);
+                            } else {
+                                tallyChart.put(combinedName, 1);
+                            }
+                        }
+                    }
+                }
+            }
+        }}
+
+    
+
     public static void printTally(ConcurrentHashMap tallyChart, ConcurrentHashMap inverseDocFreqMap, int noOfMatches) {
 
         Iterator it = tallyChart.entrySet().iterator();
@@ -633,8 +672,102 @@ public class Plagiarism {
             //Double idfValue = currentIDFArray[IDF];
 
             int count = Integer.parseInt(termEntry.getValue().toString());
-            if (count > noOfMatches) {
+            if (count >= noOfMatches) {
                 System.out.println(termEntry.getKey().toString() + " " + termEntry.getValue().toString());
+            }
+        }
+        calculatePrecisionandRecall(noOfMatches, 0, 0);
+    }
+
+    public static void calculatePrecisionandRecall(int noOfMatches, int minPrecision, int minRecall) {
+
+        String[] plagiarisedPairsA = {"40.java47.java", "40.java76.java", "40.java86.java", "40.java89.java",
+            "47.java76.java", "47.java86.java", "47.java89.java", "76.java86.java",
+            "76.java89.java", "86.java89.java", "31.java87.java"};
+
+        String[] plagiarisedPairsB = {"19.java28.java", "7.java22.java", "38.java64.java", "5.java38.java",
+            "5.java38.java", "38.java43.java", "43.java64.java", "3.java25.java", "25.java62.java", "25.java45.java",
+            "25.java41.java", "45.java62.java", "3.java62.java", "41.java62.java", "3.java45.java", "41.java45.java",
+            "3.java41.java", "15.java26.java", "5.java64.java", "5.java43.java", "43.java64.java"};
+
+        double relevantDocumentsRetrieved = 0;
+        double totalRetrievedDocuments = 0;
+
+        Iterator it = tallyChart.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry termEntry = (Map.Entry) it.next();
+            int count = Integer.parseInt(termEntry.getValue().toString());
+            if (count >= noOfMatches) {
+                totalRetrievedDocuments++;
+                for (int i = 0; i < plagiarisedPairsA.length; i++) {
+                    if (termEntry.getKey().equals(plagiarisedPairsA[i])) {
+                        relevantDocumentsRetrieved++;
+                    }
+                }
+            }
+        }
+        //double relevantDocumentsNotRetrieved = plagiarisedPairs.length - relevantDocumentsRetrieved;
+
+        double precision = ((relevantDocumentsRetrieved / totalRetrievedDocuments) * 100);
+        double recall = ((relevantDocumentsRetrieved / plagiarisedPairsA.length) * 100);
+        if (recall >= minRecall && precision >= minPrecision) {
+            System.out.print(noOfMatches);
+            //System.out.print("relevantDocsRetrieved: " + relevantDocumentsRetrieved);
+            //System.out.println(", totalDocsRetrieved: " + totalRetrievedDocuments);
+
+            System.out.print(": Precision: " + precision);
+            System.out.println(", Recall:" + recall);
+        }
+
+    }
+
+    public static void getMatchesBetween2docs(ConcurrentHashMap dictionaryMap, ConcurrentHashMap inverseDocFreqMap, String docA, String docB) {
+
+        boolean containsA = false;
+        boolean containsB = false;
+
+        Iterator iterator = dictionaryMap.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry termEntry = (Map.Entry) iterator.next();
+            String token = (String) termEntry.getKey();
+            ArrayList<String[]> postingsList = (ArrayList) termEntry.getValue();
+            for (int i = 0; i < postingsList.size() - 1; i++) {
+                if (postingsList.get(i)[DOC_NAME].equals(docA)) {
+                    containsA = true;
+                }
+                if (postingsList.get(i)[DOC_NAME].equals(docB)) {
+                    containsB = true;
+                }
+            }
+            if (containsA && containsB) {
+
+                System.out.println("'" + token + "'");
+                System.out.println(" ");
+                System.out.println("- - - - - - - - - - - - - - - - - - - - - - - - - - ");
+                System.out.println(" ");
+//                    System.out.print(", tFiDF: " + postingsList.get(i)[tFiDF]);
+//                    System.out.print(", Term Frequency: " + postingsList.get(i)[termFrequency]);
+//                    System.out.print(", iDF: " + IDF);
+//                    System.out.print(", Document: " + postingsList.get(i)[documentName]);
+//                    System.out.print(", Document Frequency: " + postingsList.get(i)[frequency]);
+//                    System.out.println(", Posting list size: " + postingsList.size());
+                containsA = false;
+                containsB = false;
+            }
+        }
+    }
+
+    public static void testPandR(ConcurrentHashMap dictionaryMap, ConcurrentHashMap inverseDocFreqMap, int minPrecision, int minRecall) {
+
+        for (double j = 0; j < 5; j = j + 0.2) {
+            System.out.println("");
+            System.out.println("MIN IDF: " + j);
+            System.out.println("");
+
+            aggregate(dictionaryMap, inverseDocFreqMap, j);
+            for (int i = 0; i < 300; i++) {
+
+                calculatePrecisionandRecall(i, minPrecision, minRecall);
             }
         }
     }

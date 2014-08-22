@@ -26,7 +26,7 @@ public class TokenGenerator {
     }
     
     public ArrayList<String> splitOnJavaSyntax(String docContents) {
-        StringTokenizer st = new StringTokenizer(docContents, ";");
+        StringTokenizer st = new StringTokenizer(docContents, ";}");
         ArrayList<String> tokens = new ArrayList<String>();
   
         
