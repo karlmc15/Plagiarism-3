@@ -3,13 +3,18 @@ package plagiarism;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JRadioButtonMenuItem;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -21,26 +26,45 @@ import net.miginfocom.swing.MigLayout;
 
 public class View extends JFrame implements ActionListener {
 
-    private final JButton printTally, compare2Docs, runTest, runApplication, getMatches;
-    private final JTextField textField1, textField2, textField3, textField4, textField5, textField6;
+    private final JButton chooseDirectory, runApplication, compare2Docs, getKnownPlagiarism, runOnce, runTest, displayTokens;
+    private final JTextField textMaxPostings, textMinPrecision, textMinRecall, textMinMatchingTokens;
     private final JTextField docA, docB;
-    private final JLabel labelSelectTokenization, label2, label3, label4, label5, label6, label7;
-    private final JLabel labelDocA, labelDocB;
-    private final JLabel spacer;
+    private final JLabel labelSelectTokenization, labelMaxPostings, labelResultsLeft, labelResultsCentre, labelResultsRight;
+    private final JLabel labelMinPrecision, labelMinRecall, labelMinMatchingTokens, labelRunTest, labelCompare2Docs;
+    private final JLabel labelDocA, labelDocB, labelDisplayTokens;
     private final JTextArea resultsPaneLeft, resultsPaneCentre, resultsPaneRight;
-    private final JRadioButtonMenuItem radio1, radio2, radio3, radio4, radio5, radio6, radio7;
-    private final ButtonGroup buttongroup;
-    private final JRadioButtonMenuItem approx;
-    private final ButtonGroup buttongroup2;
     boolean generated1, generated2, generated3, generated4, generated5, generated6, generated7 = false;
     private final JScrollPane scrollpaneLeft, scrollpaneCentre, scrollpaneRight;
-    public Double minTFIDF;
-    public Integer maxPostings, minMatches, minRecall, minPrecision;
-    public Double minIDF;
+    public Integer maxPostings, minMatchingTokens, minRecall, minPrecision;
+    ;;
+    public Double minIDF, minTFIDF;
+    private final String defaultIDF = "1.8";
+    private final String defaultTFIDF = "0.003";
+    private final String defaultMinMatchingTokens = "108";
+
+    public final JCheckBox checkBoxDefaultParameters;
+    public final JTextField textParameterTFIDF;
+    public final JTextField textParameterIDF;
+    public final JLabel labelParameterTFIDF;
+    public final JLabel labelParameterIDF;
+
+    public final JRadioButton radioSingleTest;
+    public final JRadioButton radioMultipleTest;
+    public final ButtonGroup buttonGroupTests;
+
+    public final JFileChooser directoryChooser, knownPlagiarismChooser;
+
     public Plagiarism plagiarism = new Plagiarism();
 
-    String[] tokenizationType = {"1-Grams", "Bi-Grams", "3-Grams", "4-Grams", "Basic 2-Grams", "White Space", "Java Syntax"};
-    public JComboBox comboBoxSelectTokenization = new JComboBox(tokenizationType);
+    public final JPanel panelA, panelA1, panelB, panelC, panelD, panelE;
+
+    public File directory;
+
+    String[] tokenizationTypes = {"1-Grams", "Bi-Grams", "3-Grams", "4-Grams", "Basic 2-Grams", "White Space", "Java Syntax"};
+    public JComboBox comboBoxSelectTokenization = new JComboBox(tokenizationTypes);
+
+    public static ConcurrentHashMap<String, ArrayList<String[]>> dictionaryMap = new ConcurrentHashMap<String, ArrayList<String[]>>();
+    public static ConcurrentHashMap<String, Double[]> inverseDocFreqMap = new ConcurrentHashMap<String, Double[]>();
 
     public View() {
         super();
@@ -50,292 +74,334 @@ public class View extends JFrame implements ActionListener {
         //setSize(950, 600);
         setDefaultCloseOperation(View.EXIT_ON_CLOSE);
 
-        JPanel panel = new JPanel(new MigLayout());
+        JPanel panelMain = new JPanel(new MigLayout());
 
-        this.add(panel);
+        this.add(panelMain);
         //this.pack();
+        panelA = new JPanel(new MigLayout());
+        panelA1 = new JPanel(new MigLayout());
+        panelB = new JPanel(new MigLayout());
+        panelC = new JPanel(new MigLayout());
+        panelD = new JPanel(new MigLayout());
+        panelE = new JPanel(new MigLayout());
 
-        this.labelSelectTokenization = new JLabel("Select Tokenization: ");
-        panel.add(labelSelectTokenization);
+        panelMain.add(panelA, "span");
+        //panelMain.add(panelA1, "span");
+        panelMain.add(panelB, "span 0 1");
+        panelMain.add(panelC, "span 3");
+        panelMain.add(panelD, "span 3, wrap");
+        panelMain.add(panelE, "span");
 
-        panel.add(comboBoxSelectTokenization);
+        //panelA : MAIN APPLICATION
+        labelSelectTokenization = new JLabel("Select Tokenization Method:");
+        panelA.add(labelSelectTokenization);
+
+        panelA.add(comboBoxSelectTokenization);
+        comboBoxSelectTokenization.setSelectedItem("Bi-Grams");
         comboBoxSelectTokenization.addActionListener(this);
 
-        this.runApplication = new JButton("Run Application");
-        this.runApplication.addActionListener(this);
-        //runApplication.setEnabled(false);
-        panel.add(runApplication, "wrap");
+        checkBoxDefaultParameters = new JCheckBox("Use Default Parameters");
+        checkBoxDefaultParameters.addActionListener(this);
+        checkBoxDefaultParameters.setSelected(true);
+        panelA.add(checkBoxDefaultParameters);
 
-        this.textField1 = new JTextField(20);
-        panel.add(textField1, "wrap");
+        this.labelParameterTFIDF = new JLabel("Min TFIDF:");
+        panelA.add(labelParameterTFIDF);
+        this.textParameterTFIDF = new JTextField(defaultTFIDF, 5);
+        textParameterTFIDF.setEnabled(false);
+        panelA.add(textParameterTFIDF);
 
-        this.label2 = new JLabel("Enter maximum number of Postings:");
-        panel.add(label2);
+        labelParameterIDF = new JLabel("Min IDF:");
+        panelA.add(labelParameterIDF);
+        textParameterIDF = new JTextField(defaultIDF, 5);
+        textParameterIDF.setEnabled(false);
+        panelA.add(textParameterIDF);
 
-        this.textField2 = new JTextField(20);
-        panel.add(textField2, "wrap");
+        labelMinMatchingTokens = new JLabel("Min Matches:");
+        panelA.add(labelMinMatchingTokens);
+        textMinMatchingTokens = new JTextField(defaultMinMatchingTokens, 5);
+        textMinMatchingTokens.setEnabled(false);
+        panelA.add(textMinMatchingTokens);
 
-        this.spacer = new JLabel(" ");
-        panel.add(spacer, "wrap");
+        chooseDirectory = new JButton("Choose Directory");
+        chooseDirectory.addActionListener(this);
+        panelA.add(chooseDirectory);
 
-        this.radio1 = new JRadioButtonMenuItem("1-grams");
-        this.radio2 = new JRadioButtonMenuItem("Bi-grams");
-        this.radio3 = new JRadioButtonMenuItem("3-grams");
-        this.radio4 = new JRadioButtonMenuItem("4-grams");
-        this.radio5 = new JRadioButtonMenuItem("Basic 2-grams");
-        this.radio6 = new JRadioButtonMenuItem("WhiteSpace");
-        this.radio7 = new JRadioButtonMenuItem("Java Terminators");
-        panel.add(radio1, "split 10");
-        panel.add(radio2);
-        panel.add(radio3);
-        panel.add(radio4, "split 3");
-        panel.add(radio5);
-        panel.add(radio6);
-        panel.add(radio7);
+        directoryChooser = new JFileChooser();
+        directoryChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 
-        this.approx = new JRadioButtonMenuItem("Include Approximate Values");
-        panel.add(approx, "wrap");
-        approx.addActionListener(this);
-        this.buttongroup2 = new ButtonGroup();
-        buttongroup2.add(approx);
+        runApplication = new JButton("Run Application");
+        runApplication.addActionListener(this);
+        runApplication.setEnabled(false);
+        panelA.add(runApplication, "wrap");
 
-        //add action listeners to enable "get matches" button
-        radio1.addActionListener(this);
-
-        this.buttongroup = new ButtonGroup();
-        buttongroup.add(radio1);
-
-        this.getMatches = new JButton("Display Tokens based on TD-IDF");
-        getMatches.addActionListener(this);
-        getMatches.setEnabled(false);
-        panel.add(getMatches, "wrap");
-
-        this.label3 = new JLabel("Matches");
-        panel.add(label3, "wrap");
+        //PANEL B
+        labelResultsLeft = new JLabel("Output A");
+        panelB.add(labelResultsLeft, "wrap");
 
         this.resultsPaneLeft = new JTextArea(20, 80);
         resultsPaneLeft.setMinimumSize(new Dimension(900, 400));
         resultsPaneLeft.setMaximumSize(new Dimension(900, 400));
         this.scrollpaneLeft = new JScrollPane(resultsPaneLeft);
 
+        this.labelResultsCentre = new JLabel("Ouput B");
+        panelC.add(labelResultsCentre, "wrap");
+
         this.resultsPaneCentre = new JTextArea(20, 80);
         resultsPaneCentre.setMinimumSize(new Dimension(900, 400));
         resultsPaneCentre.setMaximumSize(new Dimension(900, 400));
         this.scrollpaneCentre = new JScrollPane(resultsPaneCentre);
+
+        this.labelResultsRight = new JLabel("Output C");
+        panelD.add(labelResultsRight, "wrap");
 
         this.resultsPaneRight = new JTextArea(20, 80);
         resultsPaneRight.setMinimumSize(new Dimension(900, 400));
         resultsPaneRight.setMaximumSize(new Dimension(900, 400));
         this.scrollpaneRight = new JScrollPane(resultsPaneRight);
 
-        panel.add(scrollpaneLeft, "span 2");
-        panel.add(scrollpaneCentre, "span 2, gapleft 30");
-        panel.add(scrollpaneRight, "wrap");
+        panelB.add(scrollpaneLeft, "span");
+        panelC.add(scrollpaneCentre, "span");
+        panelD.add(scrollpaneRight, "span");
 
-        this.label4 = new JLabel("Enter minimum number of matches");
-        panel.add(label4);
-
-        this.textField3 = new JTextField(20);
-        panel.add(textField3, "wrap");
-
-        this.label5 = new JLabel("Enter minimum IDF (between 0 and 5");
-        panel.add(label5);
-
-        this.textField4 = new JTextField(20);
-        panel.add(textField4, "wrap");
-
-        this.printTally = new JButton("Print tally");
-        this.printTally.addActionListener(this);
-        panel.add(printTally, "wrap");
-
-        this.label6 = new JLabel("Enter minimum precision");
-        panel.add(label6);
-
-        this.textField5 = new JTextField(20);
-        panel.add(textField5, "wrap");
-
-        this.label7 = new JLabel("Enter minimum recall");
-        panel.add(label7);
-
-        this.textField6 = new JTextField(20);
-        panel.add(textField6, "wrap");
-
-        this.runTest = new JButton("Run Test");
-        this.runTest.addActionListener(this);
-        panel.add(runTest, "wrap");
+        //COMPARE 2 DOCS
+        this.labelCompare2Docs = new JLabel("COMPARE TWO DOCUMENTS");
+        panelE.add(labelCompare2Docs, "wrap");
 
         this.labelDocA = new JLabel("Enter first document name:");
-        panel.add(labelDocA);
+        panelE.add(labelDocA);
 
         this.docA = new JTextField(20);
-        panel.add(docA, "wrap");
+        panelE.add(docA);
 
         this.labelDocB = new JLabel("Enter second document name:");
-        panel.add(labelDocB);
+        panelE.add(labelDocB);
 
         this.docB = new JTextField(20);
-        panel.add(docB, "wrap");
+        panelE.add(docB);
 
-        this.compare2Docs = new JButton("Compare 2 documents");
+        this.compare2Docs = new JButton("Compare Two Documents");
         this.compare2Docs.addActionListener(this);
-        panel.add(compare2Docs, "wrap");
+        panelE.add(compare2Docs, "wrap");
+
+        // DISPLAY TOKENS
+        this.labelDisplayTokens = new JLabel("DISPLAY TOKENS");
+        panelE.add(labelDisplayTokens, "wrap, gaptop 15");
+
+        this.labelMaxPostings = new JLabel("Enter maximum number of Postings:");
+        panelE.add(labelMaxPostings);
+
+        this.textMaxPostings = new JTextField(20);
+        panelE.add(textMaxPostings);
+
+        this.displayTokens = new JButton("Display Tokens");
+        displayTokens.addActionListener(this);
+        displayTokens.setEnabled(true);
+        panelE.add(displayTokens, "wrap");
+
+        // RUN TEST
+        labelRunTest = new JLabel("TESTING");
+        panelE.add(labelRunTest, "wrap, gaptop 15");
+
+        getKnownPlagiarism = new JButton("Get Known Plagiarism");
+        getKnownPlagiarism.addActionListener(this);
+        panelE.add(getKnownPlagiarism, "wrap");
+
+        knownPlagiarismChooser = new JFileChooser();
+
+        radioSingleTest = new JRadioButton("Single Test");
+        radioMultipleTest = new JRadioButton("Multiple Test");
+        buttonGroupTests = new ButtonGroup();
+        buttonGroupTests.add(radioSingleTest);
+        buttonGroupTests.add(radioMultipleTest);
+        radioSingleTest.setEnabled(false);
+        radioMultipleTest.setEnabled(false);
+
+        radioSingleTest.addActionListener(this);
+        radioMultipleTest.addActionListener(this);
+
+        panelE.add(radioSingleTest);
+
+        runOnce = new JButton("Run Once");
+        runOnce.addActionListener(this);
+        panelE.add(runOnce, "wrap");
+        runOnce.setEnabled(false);
+
+        panelE.add(radioMultipleTest);
+
+        labelMinPrecision = new JLabel("Enter minimum precision (0-100)");
+        panelE.add(labelMinPrecision);
+        labelMinPrecision.setEnabled(false);
+
+        textMinPrecision = new JTextField("0", 20);
+        panelE.add(textMinPrecision);
+        textMinPrecision.setEnabled(false);
+
+        labelMinRecall = new JLabel("Enter minimum recall (0-100)");
+        panelE.add(labelMinRecall);
+        labelMinRecall.setEnabled(false);
+
+        textMinRecall = new JTextField("0", 20);
+        panelE.add(textMinRecall);
+        textMinRecall.setEnabled(false);
+
+        runTest = new JButton("Run Test");
+        runTest.addActionListener(this);
+        panelE.add(runTest, "wrap");
+        runTest.setEnabled(false);
 
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
 
-        String tokenizationType = (String)comboBoxSelectTokenization.getSelectedItem();
+        String tokenizationType = (String) comboBoxSelectTokenization.getSelectedItem();
+
+        minIDF = Double.parseDouble(textParameterIDF.getText());
+        minTFIDF = Double.parseDouble(textParameterTFIDF.getText());
+        minMatchingTokens = Integer.parseInt(textMinMatchingTokens.getText());
+        minPrecision = Integer.parseInt(textMinPrecision.getText());
+        minRecall = Integer.parseInt(textMinRecall.getText());
+
+        switch (tokenizationType) {
+            case "1-Grams":
+                dictionaryMap = Plagiarism.dictionaryMap1gram;
+                inverseDocFreqMap = Plagiarism.inverseDocFreqMap1gram;
+                System.out.println("1 selected");
+                break;
+            case "Bi-Grams":
+                dictionaryMap = Plagiarism.dictionaryMap2gram;
+                inverseDocFreqMap = Plagiarism.inverseDocFreqMap2gram;
+                break;
+            case "3-Grams":
+                dictionaryMap = Plagiarism.dictionaryMap3gram;
+                inverseDocFreqMap = Plagiarism.inverseDocFreqMap3gram;
+                break;
+            case "4-Grams":
+                dictionaryMap = Plagiarism.dictionaryMap4gram;
+                inverseDocFreqMap = Plagiarism.inverseDocFreqMap4gram;
+                break;
+            case "Basic 2-Grams":
+                dictionaryMap = Plagiarism.dictionaryMap2gramBasic;
+                inverseDocFreqMap = Plagiarism.inverseDocFreqMap2gramBasic;
+                break;
+            case "WhiteSpace":
+                dictionaryMap = Plagiarism.dictionaryMapWhiteSpace;
+                inverseDocFreqMap = Plagiarism.inverseDocFreqMapWhiteSpace;
+                break;
+            case "Java Terminators":
+                dictionaryMap = Plagiarism.dictionaryMapJava;
+                inverseDocFreqMap = Plagiarism.inverseDocFreqMapJava;
+        }
 
         Boolean includeApproximateMatches = false;
 
-        if (e.getSource()
-                == runApplication) {
-            resultsPaneLeft.setText(tokenizationType);
-            Plagiarism.generateInvertedIndex(tokenizationType, includeApproximateMatches);
-            Plagiarism.aggregateWeighted(Plagiarism.dictionaryMap1gram, Plagiarism.inverseDocFreqMap1gram, 3);
-            resultsPaneLeft.setText(Plagiarism.printTally(Plagiarism.matchingTokensBetweenDocPairs, Plagiarism.inverseDocFreqMap1gram, 0));
-            
+        if (e.getSource() == runApplication) {
 
-        } else if (e.getSource() == getMatches) {
-            minTFIDF = Double.parseDouble(textField1.getText());
-            maxPostings = Integer.parseInt(textField2.getText());
+            resultsPaneLeft.setText(Plagiarism.displayResults(minIDF, minTFIDF, minMatchingTokens, tokenizationType,
+                    includeApproximateMatches, directory, dictionaryMap, inverseDocFreqMap));
+            labelResultsLeft.setText("Suspicious Document Pairs");
 
-            getMatches.setEnabled(true);
+            labelResultsCentre.setEnabled(false);
+            labelResultsRight.setEnabled(false);
 
-            if (approx.isSelected()) {
-                includeApproximateMatches = true;
-            }
+            resultsPaneCentre.setEnabled(false);
+            resultsPaneRight.setEnabled(false);
 
-            if (radio1.isSelected()) {
-                if (!generated1) {
-                    Plagiarism.generateTokens(1, includeApproximateMatches);
-                    generated1 = true;
-                }
-                resultsPaneLeft.setText(Plagiarism.getMatches(minTFIDF, maxPostings, Plagiarism.dictionaryMap1gram, Plagiarism.inverseDocFreqMap1gram));
+        } else if (e.getSource() == displayTokens) {
 
-            } else if (radio2.isSelected()) {
-                if (!generated2) {
-                    Plagiarism.generateTokens(2, includeApproximateMatches);
-                    generated2 = true;
-                }
-                resultsPaneLeft.setText(Plagiarism.getMatches(minTFIDF, maxPostings, Plagiarism.dictionaryMap2gram, Plagiarism.inverseDocFreqMap2gram));
-
-            } else if (radio3.isSelected()) {
-                if (!generated3) {
-                    Plagiarism.generateTokens(3, includeApproximateMatches);
-                    generated3 = true;
-                }
-                resultsPaneLeft.setText(Plagiarism.getMatches(minTFIDF, maxPostings, Plagiarism.dictionaryMap3gram, Plagiarism.inverseDocFreqMap3gram));
-
-            } else if (radio4.isSelected()) {
-                if (!generated4) {
-                    Plagiarism.generateTokens(4, includeApproximateMatches);
-                    generated4 = true;
-                }
-                resultsPaneLeft.setText(Plagiarism.getMatches(minTFIDF, maxPostings, Plagiarism.dictionaryMap4gram, Plagiarism.inverseDocFreqMap4gram));
-
-            } else if (radio5.isSelected()) {
-                if (!generated5) {
-                    Plagiarism.generateTokens(5, includeApproximateMatches);
-                    generated5 = true;
-                }
-                resultsPaneLeft.setText(Plagiarism.getMatches(minTFIDF, maxPostings, Plagiarism.dictionaryMap2gramBasic, Plagiarism.inverseDocFreqMap2gramBasic));
-
-            } else if (radio6.isSelected()) {
-                if (!generated5) {
-                    Plagiarism.generateTokens(6, includeApproximateMatches);
-                    generated5 = true;
-                }
-                resultsPaneLeft.setText(Plagiarism.getMatches(minTFIDF, maxPostings, Plagiarism.dictionaryMapWhiteSpace, Plagiarism.inverseDocFreqMapWhiteSpace));
-
-            } else if (radio7.isSelected()) {
-                if (!generated7) {
-                    Plagiarism.generateTokens(7, includeApproximateMatches);
-                    generated7 = true;
-                }
-                resultsPaneLeft.setText(Plagiarism.getMatches(minTFIDF, maxPostings, Plagiarism.dictionaryMapJava, Plagiarism.inverseDocFreqMapJava));
-
-            }
-
-        } else if (e.getSource()
-                == printTally) {
-            minMatches = Integer.parseInt(textField3.getText());
-            minIDF = Double.parseDouble(textField4.getText());
-            
-            
-
-            if (radio1.isSelected()) {
-                Plagiarism.aggregateWeighted(Plagiarism.dictionaryMap1gram, Plagiarism.inverseDocFreqMap1gram, minIDF);
-                Plagiarism.printTally(Plagiarism.matchingTokensBetweenDocPairs, Plagiarism.inverseDocFreqMap1gram, minMatches);
-
-            } else if (radio2.isSelected()) {
-                Plagiarism.aggregateWeighted(Plagiarism.dictionaryMap2gram, Plagiarism.inverseDocFreqMap2gram, minIDF);
-                Plagiarism.printTally(Plagiarism.matchingTokensBetweenDocPairs, Plagiarism.inverseDocFreqMap2gram, minMatches);
-            } else if (radio3.isSelected()) {
-                Plagiarism.aggregateWeighted(Plagiarism.dictionaryMap3gram, Plagiarism.inverseDocFreqMap3gram, minIDF);
-                Plagiarism.printTally(Plagiarism.matchingTokensBetweenDocPairs, Plagiarism.inverseDocFreqMap3gram, minMatches);
-            } else if (radio4.isSelected()) {
-                Plagiarism.aggregateWeighted(Plagiarism.dictionaryMap4gram, Plagiarism.inverseDocFreqMap4gram, minIDF);
-                Plagiarism.printTally(Plagiarism.matchingTokensBetweenDocPairs, Plagiarism.inverseDocFreqMap4gram, minMatches);
-            } else if (radio5.isSelected()) {
-                Plagiarism.aggregateWeighted(Plagiarism.dictionaryMap2gramBasic, Plagiarism.inverseDocFreqMap2gramBasic, minIDF);
-                Plagiarism.printTally(Plagiarism.matchingTokensBetweenDocPairs, Plagiarism.inverseDocFreqMap2gramBasic, minMatches);
-            } else if (radio6.isSelected()) {
-                Plagiarism.aggregateWeighted(Plagiarism.dictionaryMapWhiteSpace, Plagiarism.inverseDocFreqMapWhiteSpace, minIDF);
-                Plagiarism.printTally(Plagiarism.matchingTokensBetweenDocPairs, Plagiarism.inverseDocFreqMap2gram, minMatches);
-
-            } else if (radio7.isSelected()) {
-                Plagiarism.aggregateWeighted(Plagiarism.dictionaryMapJava, Plagiarism.inverseDocFreqMapJava, minIDF);
-                Plagiarism.printTally(Plagiarism.matchingTokensBetweenDocPairs, Plagiarism.inverseDocFreqMapJava, minMatches);
-            }
+            resultsPaneLeft.setText(Plagiarism.displayTokens(minTFIDF, maxPostings, dictionaryMap, inverseDocFreqMap));
 
         } else if (e.getSource() == runTest) {
-            minPrecision = Integer.parseInt(textField5.getText());
-            minRecall = Integer.parseInt(textField6.getText());
-            if (radio1.isSelected()) {
-                Plagiarism.testPandR(Plagiarism.dictionaryMap1gram, Plagiarism.inverseDocFreqMap1gram, minPrecision, minRecall);
-            } else if (radio2.isSelected()) {
-                Plagiarism.testPandR(Plagiarism.dictionaryMap2gram, Plagiarism.inverseDocFreqMap2gram, minPrecision, minRecall);
-            } else if (radio3.isSelected()) {
-                Plagiarism.testPandR(Plagiarism.dictionaryMap3gram, Plagiarism.inverseDocFreqMap3gram, minPrecision, minRecall);
-            } else if (radio4.isSelected()) {
-                Plagiarism.testPandR(Plagiarism.dictionaryMap4gram, Plagiarism.inverseDocFreqMap4gram, minPrecision, minRecall);
-            } else if (radio5.isSelected()) {
-                Plagiarism.testPandR(Plagiarism.dictionaryMap2gramBasic, Plagiarism.inverseDocFreqMap2gramBasic, minPrecision, minRecall);
-            } else if (radio6.isSelected()) {
-                Plagiarism.testPandR(Plagiarism.dictionaryMapWhiteSpace, Plagiarism.inverseDocFreqMapWhiteSpace, minPrecision, minRecall);
-            } else if (radio7.isSelected()) {
-                Plagiarism.testPandR(Plagiarism.dictionaryMapJava, Plagiarism.inverseDocFreqMapJava, minPrecision, minRecall);
-            }
-        } else if (e.getSource()
-                == radio1 || e.getSource() == radio2 || e.getSource() == radio3 || e.getSource() == radio4
-                || e.getSource() == radio5 || e.getSource() == radio6 || e.getSource() == radio7) {
-            getMatches.setEnabled(true);
+
+            Plagiarism.testPandR(dictionaryMap, inverseDocFreqMap, minPrecision, minRecall);
+
+        } else if (e.getSource() == runOnce) {
+
+            resultsPaneLeft.setText(Plagiarism.displayResults(minIDF, minTFIDF, minMatchingTokens, tokenizationType,
+                    includeApproximateMatches, directory, dictionaryMap, inverseDocFreqMap));
+            resultsPaneCentre.setText(Plagiarism.getKnownPlagiarism());
+            resultsPaneRight.setText(Plagiarism.displayPrecisionAndRecall());
+
+            labelResultsLeft.setText("Suspicious Document Pairs");
+            labelResultsCentre.setText("Known Plagiarism");
+            labelResultsRight.setText("Precision & Recall");
+
         } else if (e.getSource() == compare2Docs) {
+
             String docAname = docA.getText();
             String docBname = docB.getText();
-            resultsPaneLeft.setText(Plagiarism.getDocContents(docAname));
-            resultsPaneRight.setText(Plagiarism.getDocContents(docBname));
-            if (radio1.isSelected()) {
-                Plagiarism.getMatchesBetween2docs(Plagiarism.dictionaryMap1gram, Plagiarism.inverseDocFreqMap1gram, docAname, docBname);
-            } else if (radio2.isSelected()) {
-                Plagiarism.getMatchesBetween2docs(Plagiarism.dictionaryMap2gram, Plagiarism.inverseDocFreqMap2gram, docAname, docBname);
-            } else if (radio3.isSelected()) {
-                Plagiarism.getMatchesBetween2docs(Plagiarism.dictionaryMap3gram, Plagiarism.inverseDocFreqMap3gram, docAname, docBname);
-            } else if (radio4.isSelected()) {
-                Plagiarism.getMatchesBetween2docs(Plagiarism.dictionaryMap4gram, Plagiarism.inverseDocFreqMap4gram, docAname, docBname);
-            } else if (radio5.isSelected()) {
-                Plagiarism.getMatchesBetween2docs(Plagiarism.dictionaryMap2gramBasic, Plagiarism.inverseDocFreqMap2gramBasic, docAname, docBname);
-            } else if (radio6.isSelected()) {
-                Plagiarism.getMatchesBetween2docs(Plagiarism.dictionaryMapWhiteSpace, Plagiarism.inverseDocFreqMapWhiteSpace, docAname, docBname);
-            } else if (radio7.isSelected()) {
-                Plagiarism.getMatchesBetween2docs(Plagiarism.dictionaryMapJava, Plagiarism.inverseDocFreqMapJava, docAname, docBname);
-            }
-
-            Plagiarism.highlightTokens(resultsPaneLeft, Plagiarism.matchingTokens);
+            resultsPaneCentre.setText(Plagiarism.getDocContents(docAname, directory));
+            resultsPaneRight.setText(Plagiarism.getDocContents(docBname, directory));
+            resultsPaneLeft.setText(Plagiarism.getMatchesBetween2docs(dictionaryMap, inverseDocFreqMap, docAname, docBname));
+            Plagiarism.highlightTokens(resultsPaneCentre, Plagiarism.matchingTokens);
             Plagiarism.highlightTokens(resultsPaneRight, Plagiarism.matchingTokens);
 
+            //resultsPaneLeft.setText(Plagiarism.displayTokens(minTFIDF, 0, dictionaryMap, inverseDocFreqMap));
+            
+            labelResultsLeft.setText("Matching Tokens");
+            labelResultsCentre.setText(docAname);
+            labelResultsRight.setText(docBname);
+            
+            labelResultsLeft.setEnabled(true);
+            labelResultsCentre.setEnabled(true);
+            labelResultsRight.setEnabled(true);
+            
+            resultsPaneLeft.setEnabled(true);
+            resultsPaneCentre.setEnabled(true);
+            resultsPaneRight.setEnabled(true);
+                     
+
+        } else if (e.getSource()
+                == checkBoxDefaultParameters) {
+            if (checkBoxDefaultParameters.isSelected()) {
+
+                textParameterTFIDF.setEnabled(false);
+                textParameterIDF.setEnabled(false);
+                textMinMatchingTokens.setEnabled(false);
+
+                textParameterTFIDF.setText(defaultTFIDF);
+                textParameterIDF.setText(defaultIDF);
+                textMinMatchingTokens.setText(defaultMinMatchingTokens);
+
+            } else if (!checkBoxDefaultParameters.isSelected()) {
+                textParameterTFIDF.setEnabled(true);
+                textParameterIDF.setEnabled(true);
+                textMinMatchingTokens.setEnabled(true);
+            }
+        } else if (e.getSource() == chooseDirectory) {
+
+            directoryChooser.showOpenDialog(this);
+            directory = directoryChooser.getSelectedFile();
+            runApplication.setEnabled(true);
+            
+
+        } else if (e.getSource() == getKnownPlagiarism) {
+
+            knownPlagiarismChooser.showOpenDialog(this);
+            Plagiarism.setKnownPlagiarism(knownPlagiarismChooser.getSelectedFile());
+
+            radioSingleTest.setEnabled(true);
+            radioSingleTest.setSelected(true);
+            radioMultipleTest.setEnabled(true);
+            runOnce.setEnabled(true);
+
+        } else if (e.getSource() == radioSingleTest) {
+            runOnce.setEnabled(true);
+            labelMinPrecision.setEnabled(false);
+            textMinPrecision.setEnabled(false);
+            labelMinRecall.setEnabled(false);
+            textMinRecall.setEnabled(false);
+            runTest.setEnabled(false);
+        } else if (e.getSource() == radioMultipleTest) {
+            labelMinPrecision.setEnabled(true);
+            textMinPrecision.setEnabled(true);
+            labelMinRecall.setEnabled(true);
+            textMinRecall.setEnabled(true);
+            runTest.setEnabled(true);
+
+            runOnce.setEnabled(false);
         }
+
     }
 }
