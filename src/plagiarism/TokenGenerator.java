@@ -4,71 +4,76 @@ import java.util.ArrayList;
 import java.util.StringTokenizer;
 
 public class TokenGenerator {
-    
+
 //    public static void main (String[] args){
 //        String testString = "this is a ;      test} string";
-//        ArrayList testList = splitOnJavaSyntax(testString);
+//        ArrayList testList = generateTwoGrams(testString);
+//        ArrayList testList2 = generateTwoGramsBasic(testString);
+//        ArrayList testList3 = generateThreeGrams(testString);
+//        
+//        
+//        System.out.println("two grams");
 //        for (int i = 0; i<testList.size(); i++){
-//            System.out.println(testList.get(i));           
+//            System.out.println("- " + testList.get(i));           
+//        }
+//        System.out.println("two grams basic ");
+//        for (int i = 0; i<testList2.size(); i++){
+//            System.out.println("- " + testList2.get(i));           
+//        }
+//        System.out.println("three grams");
+//        for (int i = 0; i<testList3.size(); i++){
+//            System.out.println("- " + testList3.get(i));           
 //        }
 //    }
+    public ArrayList generateTokens(String docContents, String tokenizationType) {
+
+        System.out.println("token generator running");
+        ArrayList<String> tokens = new ArrayList<>();
+       
+     
+        if (tokenizationType.equals("1-Grams")) {
+            tokens = generateOneGrams(docContents);
+
+        } else if (tokenizationType.equals("Bi-Grams")) {
+            tokens = generateTwoGrams(docContents);
+
+        } else if (tokenizationType.equals("3-Grams")) {
+            tokens = generateThreeGrams(docContents);
+
+        } else if (tokenizationType.equals("4-Grams")) {
+            tokens = generateFourGrams(docContents);
+
+        } else if (tokenizationType.equals("Basic 2-Grams")) {
+            tokens = generateTwoGramsBasic(docContents);
+
+        } else if (tokenizationType.equals("WhiteSpace")) {
+            tokens = generateSpaces(docContents);
+
+        } else if (tokenizationType.equals("Java Terminators")) {
+            tokens = splitOnJavaSyntax(docContents);
+        }
+        System.out.println("tokengen: " + tokens.get(0));
+        return tokens;
+    }
+
+    
     
     //takes a single document, and adds all tokens to an array list
-    public ArrayList<String> generateOneGrams(String docContents) {
+    public static ArrayList<String> generateOneGrams(String docContents) {
+        ArrayList<String> tokens = new ArrayList<>();
         StringTokenizer st = new StringTokenizer(docContents);
-        
-        ArrayList<String> tokens = new ArrayList<String>();
-        
         while (st.hasMoreTokens()) {
             tokens.add(st.nextToken());
         }
         return tokens;
     }
-    
-    public ArrayList<String> splitOnJavaSyntax(String docContents) {
-        StringTokenizer st = new StringTokenizer(docContents, ";}");
-        ArrayList<String> tokens = new ArrayList<String>();
-  
-        
-        while (st.hasMoreTokens()) {
-            tokens.add(st.nextToken());
-        }
-        return tokens;
-    }
-    
-    public ArrayList<String> generateSpaces(String docContents) {
-        docContents = docContents + " ";
-        char[] docChars = docContents.toCharArray();
-        ArrayList<String> tokens = new ArrayList<String>();
-        
-        StringBuilder currentToken = new StringBuilder();
-        boolean tokenFlag = false;
-        
-        for (int i = 0; i<docChars.length; i++) {
-            String currentChar = String.valueOf(docChars[i]);
-            if (currentChar.matches("\\s")){ //is a space
-                currentToken.append(currentChar);
-                tokenFlag = true;
-                //?maybe?need a break here? to go to next letter
-            } else { //currentchar is a alphanumeric character
-                if (tokenFlag){ //end of a token, add and reset
-                    tokens.add(currentToken.toString());
-                    currentToken.setLength(0);
-                    tokenFlag = false;
-                } else {
-                    // do nothing
-                }
-            }  
-        }
-        return tokens;
-    }
-    
-    public ArrayList<String> generateTwoGramsBasic(String docContents) {
 
+    public static ArrayList<String> generateTwoGramsBasic(String docContents) {
+
+        ArrayList<String> tokens = new ArrayList<>();
         docContents = docContents + " "; //ensures last word is added.
         char[] a_char_array = docContents.toCharArray();
-        ArrayList<String> tokens = new ArrayList<String>();
-        
+
         boolean firstWord = true;
         boolean addWord = false;
         int position = 0;
@@ -126,9 +131,10 @@ public class TokenGenerator {
         }
         return tokens;
     }
-    
-    public ArrayList<String> generateTwoGrams(String docContents) {
 
+    public static ArrayList<String> generateTwoGrams(String docContents) {
+
+        ArrayList<String> tokens = new ArrayList<>();
         docContents = docContents + " ";
         char[] inputCharacters = docContents.toCharArray();
         boolean firstBreak = false;
@@ -136,19 +142,17 @@ public class TokenGenerator {
         boolean lastCharWasSpace = false;
         int position = 0;
         StringBuilder currentToken = new StringBuilder();
-        
-        ArrayList<String> tokens = new ArrayList<String>();
-        
-        for (int i = 0; i < docContents.length()-1; i++) {
+
+        for (int i = 0; i < docContents.length() - 1; i++) {
             String currentChar = String.valueOf(inputCharacters[i]);
             if (currentChar.matches("\\S")) { // not whitespace
-                
+
                 if (lastCharWasSpace && !firstChar) { //start of second word - set position 
-                    position = i-1;
+                    position = i - 1;
                 }
-                
+
                 if (firstChar) { //new two-gram, first letter of first word
-                    firstChar = false;   
+                    firstChar = false;
                 }
                 currentToken.append(currentChar);
                 lastCharWasSpace = false;
@@ -171,9 +175,9 @@ public class TokenGenerator {
         }
         return tokens;
     }
-    
-    public ArrayList generateThreeGrams(String docContents) {
 
+    public static ArrayList generateThreeGrams(String docContents) {
+        ArrayList<String> tokens = new ArrayList<>();
         docContents = docContents + " ";
         char[] inputCharacters = docContents.toCharArray();
         boolean firstBreak = false;
@@ -182,14 +186,13 @@ public class TokenGenerator {
         boolean lastCharWasSpace = false;
         int position = 0;
         StringBuilder currentToken = new StringBuilder();
-        ArrayList<String> tokens = new ArrayList();
 
         for (int i = 0; i < docContents.length() - 1; i++) {
             String currentChar = String.valueOf(inputCharacters[i]);    //get current character as string
             if (currentChar.matches("\\S")) {                           //not white space, then add to current string
-                
+
                 if (lastCharWasSpace && !firstChar) { //start of second word - set position 
-                    position = i-1;
+                    position = i - 1;
                 }
                 if (firstChar) {
                     firstChar = false;
@@ -205,8 +208,8 @@ public class TokenGenerator {
                 } else if (firstBreak && !secondBreak && !lastCharWasSpace) { //end of second word 
                     currentToken.append(currentChar);                       //add space 
                     secondBreak = true;                                  //set firstBreak, i.e. first word finished
-                                                                        //no need to set position
-                } else if (firstBreak && secondBreak &&!lastCharWasSpace) {           // end of third word
+                    //no need to set position
+                } else if (firstBreak && secondBreak && !lastCharWasSpace) {           // end of third word
                     tokens.add(currentToken.toString());                                //add token to arraylist
                     firstChar = true;                                   // set first char ready for next word
                     i = position;                                       //move i back to middle of last pair
@@ -222,9 +225,10 @@ public class TokenGenerator {
         return tokens;
 
     }
-    
+
     public ArrayList generateFourGrams(String docContents) {
 
+        ArrayList<String> tokens = new ArrayList<>();
         docContents = docContents + " ";
         char[] inputCharacters = docContents.toCharArray();
         boolean firstBreak = false;
@@ -234,15 +238,14 @@ public class TokenGenerator {
         boolean lastCharWasSpace = false;
         int position = 0;
         StringBuilder currentToken = new StringBuilder();
-        ArrayList<String> tokens = new ArrayList();
 
         for (int i = 0; i < docContents.length() - 1; i++) {    //COME BACK TO THIS -- I THINK THIS NEEDS CHANGING - MAYBE USE 
-                                                                //SPLIT METHOD TO GET THE NUMBER OF WORDS 
+            //SPLIT METHOD TO GET THE NUMBER OF WORDS 
             String currentChar = String.valueOf(inputCharacters[i]);    //get current character as string
             if (currentChar.matches("\\S")) {                           //not white space, then add to current string
-                
+
                 if (lastCharWasSpace && !firstChar) {                   //start of second word - set position 
-                    position = i-1;
+                    position = i - 1;
                 }
                 if (firstChar) {
                     firstChar = false;
@@ -258,12 +261,12 @@ public class TokenGenerator {
                 } else if (firstBreak && !secondBreak && !lastCharWasSpace) { //end of second word 
                     currentToken.append(currentChar);                         //add space 
                     secondBreak = true;                                     //set firstBreak, i.e. first word finished
-                                                                            //no need to set position
-                } else if (firstBreak && secondBreak &&!thirdBreak && !lastCharWasSpace) { //end of third word
+                    //no need to set position
+                } else if (firstBreak && secondBreak && !thirdBreak && !lastCharWasSpace) { //end of third word
                     currentToken.append(currentChar);
                     thirdBreak = true;
-                    
-                } else if (firstBreak && secondBreak && thirdBreak &&!lastCharWasSpace) { //end of fourth word
+
+                } else if (firstBreak && secondBreak && thirdBreak && !lastCharWasSpace) { //end of fourth word
                     tokens.add(currentToken.toString());                                       //add token to arraylist
                     firstChar = true;                                       //set first char ready for next word
                     i = position;                                           //move i back to middle of last pair
@@ -280,6 +283,41 @@ public class TokenGenerator {
         return tokens;
 
     }
-}
-    
 
+    public ArrayList<String> generateSpaces(String docContents) {
+        ArrayList<String> tokens = new ArrayList<>();
+        docContents = docContents + " ";
+        char[] docChars = docContents.toCharArray();
+
+        StringBuilder currentToken = new StringBuilder();
+        boolean tokenFlag = false;
+
+        for (int i = 0; i < docChars.length; i++) {
+            String currentChar = String.valueOf(docChars[i]);
+            if (currentChar.matches("\\s")) { //is a space
+                currentToken.append(currentChar);
+                tokenFlag = true;
+                //?maybe?need a break here? to go to next letter
+            } else { //currentchar is a alphanumeric character
+                if (tokenFlag) { //end of a token, add and reset
+                    tokens.add(currentToken.toString());
+                    currentToken.setLength(0);
+                    tokenFlag = false;
+                } else {
+                    // do nothing
+                }
+            }
+        }
+        return tokens;
+    }
+
+    public ArrayList<String> splitOnJavaSyntax(String docContents) {
+        ArrayList<String> tokens = new ArrayList<>();
+        StringTokenizer st = new StringTokenizer(docContents, ";}");
+
+        while (st.hasMoreTokens()) {
+            tokens.add(st.nextToken());
+        }
+        return tokens;
+    }
+}

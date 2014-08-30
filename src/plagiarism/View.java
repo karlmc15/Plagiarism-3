@@ -38,9 +38,9 @@ public class View extends JFrame implements ActionListener {
     public Integer maxPostings, minMatchingTokens, minRecall, minPrecision;
     ;;
     public Double minIDF, minTFIDF;
-    private final String defaultIDF = "1.8";
-    private final String defaultTFIDF = "0.003";
-    private final String defaultMinMatchingTokens = "108";
+    private final String defaultIDF = "0";
+    private final String defaultTFIDF = "0.0";
+    private final String defaultMinMatchingTokens = "0";
 
     public final JCheckBox checkBoxDefaultParameters;
     public final JTextField textParameterTFIDF;
@@ -65,6 +65,7 @@ public class View extends JFrame implements ActionListener {
 
     public static ConcurrentHashMap<String, ArrayList<String[]>> dictionaryMap = new ConcurrentHashMap<String, ArrayList<String[]>>();
     public static ConcurrentHashMap<String, Double[]> inverseDocFreqMap = new ConcurrentHashMap<String, Double[]>();
+    public static String tokenizationType;
 
     public View() {
         super();
@@ -255,7 +256,7 @@ public class View extends JFrame implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
 
-        String tokenizationType = (String) comboBoxSelectTokenization.getSelectedItem();
+        tokenizationType = (String) comboBoxSelectTokenization.getSelectedItem();
 
         minIDF = Double.parseDouble(textParameterIDF.getText());
         minTFIDF = Double.parseDouble(textParameterTFIDF.getText());
@@ -263,43 +264,14 @@ public class View extends JFrame implements ActionListener {
         minPrecision = Integer.parseInt(textMinPrecision.getText());
         minRecall = Integer.parseInt(textMinRecall.getText());
 
-        switch (tokenizationType) {
-            case "1-Grams":
-                dictionaryMap = Plagiarism.dictionaryMap1gram;
-                inverseDocFreqMap = Plagiarism.inverseDocFreqMap1gram;
-                System.out.println("1 selected");
-                break;
-            case "Bi-Grams":
-                dictionaryMap = Plagiarism.dictionaryMap2gram;
-                inverseDocFreqMap = Plagiarism.inverseDocFreqMap2gram;
-                break;
-            case "3-Grams":
-                dictionaryMap = Plagiarism.dictionaryMap3gram;
-                inverseDocFreqMap = Plagiarism.inverseDocFreqMap3gram;
-                break;
-            case "4-Grams":
-                dictionaryMap = Plagiarism.dictionaryMap4gram;
-                inverseDocFreqMap = Plagiarism.inverseDocFreqMap4gram;
-                break;
-            case "Basic 2-Grams":
-                dictionaryMap = Plagiarism.dictionaryMap2gramBasic;
-                inverseDocFreqMap = Plagiarism.inverseDocFreqMap2gramBasic;
-                break;
-            case "WhiteSpace":
-                dictionaryMap = Plagiarism.dictionaryMapWhiteSpace;
-                inverseDocFreqMap = Plagiarism.inverseDocFreqMapWhiteSpace;
-                break;
-            case "Java Terminators":
-                dictionaryMap = Plagiarism.dictionaryMapJava;
-                inverseDocFreqMap = Plagiarism.inverseDocFreqMapJava;
-        }
-
         Boolean includeApproximateMatches = false;
 
         if (e.getSource() == runApplication) {
+            
+            tokenizationType = (String) comboBoxSelectTokenization.getSelectedItem();
 
             resultsPaneLeft.setText(Plagiarism.displayResults(minIDF, minTFIDF, minMatchingTokens, tokenizationType,
-                    includeApproximateMatches, directory, dictionaryMap, inverseDocFreqMap));
+                    includeApproximateMatches, directory));
             labelResultsLeft.setText("Suspicious Document Pairs");
 
             labelResultsCentre.setEnabled(false);
@@ -310,16 +282,18 @@ public class View extends JFrame implements ActionListener {
 
         } else if (e.getSource() == displayTokens) {
 
-            resultsPaneLeft.setText(Plagiarism.displayTokens(minTFIDF, maxPostings, dictionaryMap, inverseDocFreqMap));
+            resultsPaneLeft.setText(Plagiarism.displayTokens(minTFIDF, maxPostings));
 
         } else if (e.getSource() == runTest) {
 
             Plagiarism.testPandR(dictionaryMap, inverseDocFreqMap, minPrecision, minRecall);
 
         } else if (e.getSource() == runOnce) {
+            
+            tokenizationType = (String) comboBoxSelectTokenization.getSelectedItem();
 
             resultsPaneLeft.setText(Plagiarism.displayResults(minIDF, minTFIDF, minMatchingTokens, tokenizationType,
-                    includeApproximateMatches, directory, dictionaryMap, inverseDocFreqMap));
+                    includeApproximateMatches, directory));
             resultsPaneCentre.setText(Plagiarism.getKnownPlagiarism());
             resultsPaneRight.setText(Plagiarism.displayPrecisionAndRecall());
 
@@ -329,28 +303,28 @@ public class View extends JFrame implements ActionListener {
 
         } else if (e.getSource() == compare2Docs) {
 
+            tokenizationType = (String) comboBoxSelectTokenization.getSelectedItem();
+            
             String docAname = docA.getText();
             String docBname = docB.getText();
             resultsPaneCentre.setText(Plagiarism.getDocContents(docAname, directory));
             resultsPaneRight.setText(Plagiarism.getDocContents(docBname, directory));
-            resultsPaneLeft.setText(Plagiarism.getMatchesBetween2docs(dictionaryMap, inverseDocFreqMap, docAname, docBname));
+            resultsPaneLeft.setText(Plagiarism.getMatchesBetween2docs(docAname, docBname));
             Plagiarism.highlightTokens(resultsPaneCentre, Plagiarism.matchingTokens);
             Plagiarism.highlightTokens(resultsPaneRight, Plagiarism.matchingTokens);
 
             //resultsPaneLeft.setText(Plagiarism.displayTokens(minTFIDF, 0, dictionaryMap, inverseDocFreqMap));
-            
             labelResultsLeft.setText("Matching Tokens");
             labelResultsCentre.setText(docAname);
             labelResultsRight.setText(docBname);
-            
+
             labelResultsLeft.setEnabled(true);
             labelResultsCentre.setEnabled(true);
             labelResultsRight.setEnabled(true);
-            
+
             resultsPaneLeft.setEnabled(true);
             resultsPaneCentre.setEnabled(true);
             resultsPaneRight.setEnabled(true);
-                     
 
         } else if (e.getSource()
                 == checkBoxDefaultParameters) {
@@ -374,7 +348,6 @@ public class View extends JFrame implements ActionListener {
             directoryChooser.showOpenDialog(this);
             directory = directoryChooser.getSelectedFile();
             runApplication.setEnabled(true);
-            
 
         } else if (e.getSource() == getKnownPlagiarism) {
 
@@ -401,6 +374,12 @@ public class View extends JFrame implements ActionListener {
             runTest.setEnabled(true);
 
             runOnce.setEnabled(false);
+
+        } else if (e.getSource() == comboBoxSelectTokenization) {
+  
+            tokenizationType = (String) comboBoxSelectTokenization.getSelectedItem();
+            
+            
         }
 
     }
