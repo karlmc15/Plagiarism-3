@@ -20,6 +20,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultCaret;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
 import net.miginfocom.swing.MigLayout;
@@ -34,6 +35,7 @@ public class View extends JFrame implements ActionListener {
     private final JLabel labelDocA, labelDocB, labelDisplayTokens;
     private final JTextArea resultsPaneLeft, resultsPaneCentre, resultsPaneRight;
     boolean generated1, generated2, generated3, generated4, generated5, generated6, generated7 = false;
+    boolean showTokens = false;
     private final JScrollPane scrollpaneLeft, scrollpaneCentre, scrollpaneRight;
     public Integer maxPostings, minMatchingTokens, minRecall, minPrecision;
     ;;
@@ -42,7 +44,7 @@ public class View extends JFrame implements ActionListener {
     private final String defaultTFIDF = "0.0";
     private final String defaultMinMatchingTokens = "0";
 
-    public final JCheckBox checkBoxDefaultParameters;
+    public final JCheckBox checkBoxDefaultParameters, checkBoxShowTokens;
     public final JTextField textParameterTFIDF;
     public final JTextField textParameterIDF;
     public final JLabel labelParameterTFIDF;
@@ -70,9 +72,10 @@ public class View extends JFrame implements ActionListener {
     public View() {
         super();
         setTitle("Dave's Plagiarism Detector");
+        setSize(950, 600);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         //setVisible(true);
-        //setSize(950, 600);
+
         setDefaultCloseOperation(View.EXIT_ON_CLOSE);
 
         JPanel panelMain = new JPanel(new MigLayout());
@@ -131,6 +134,11 @@ public class View extends JFrame implements ActionListener {
         directoryChooser = new JFileChooser();
         directoryChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 
+        checkBoxShowTokens = new JCheckBox("Show Tokens");
+        checkBoxShowTokens.addActionListener(this);
+        checkBoxShowTokens.setSelected(false);
+        panelA.add(checkBoxShowTokens);
+
         runApplication = new JButton("Run Application");
         runApplication.addActionListener(this);
         runApplication.setEnabled(false);
@@ -145,7 +153,7 @@ public class View extends JFrame implements ActionListener {
         resultsPaneLeft.setMaximumSize(new Dimension(900, 400));
         this.scrollpaneLeft = new JScrollPane(resultsPaneLeft);
 
-        this.labelResultsCentre = new JLabel("Ouput B");
+        this.labelResultsCentre = new JLabel("Output B");
         panelC.add(labelResultsCentre, "wrap");
 
         this.resultsPaneCentre = new JTextArea(20, 80);
@@ -251,6 +259,13 @@ public class View extends JFrame implements ActionListener {
         panelE.add(runTest, "wrap");
         runTest.setEnabled(false);
 
+        DefaultCaret caretCentre = (DefaultCaret) resultsPaneCentre.getCaret();
+        caretCentre.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
+        DefaultCaret caretLeft = (DefaultCaret) resultsPaneLeft.getCaret();
+        caretLeft.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
+        DefaultCaret caretRight = (DefaultCaret) resultsPaneRight.getCaret();
+        caretRight.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
+
     }
 
     @Override
@@ -267,18 +282,31 @@ public class View extends JFrame implements ActionListener {
         Boolean includeApproximateMatches = false;
 
         if (e.getSource() == runApplication) {
-            
+
             tokenizationType = (String) comboBoxSelectTokenization.getSelectedItem();
 
             resultsPaneLeft.setText(Plagiarism.displayResults(minIDF, minTFIDF, minMatchingTokens, tokenizationType,
                     includeApproximateMatches, directory));
             labelResultsLeft.setText("Suspicious Document Pairs");
 
+            labelResultsCentre.setText(" ");
+            labelResultsRight.setText(" ");
+            
             labelResultsCentre.setEnabled(false);
             labelResultsRight.setEnabled(false);
-
+            
+            resultsPaneCentre.setText(" ");
+            resultsPaneRight.setText(" ");
+            
             resultsPaneCentre.setEnabled(false);
             resultsPaneRight.setEnabled(false);
+
+            if (showTokens) {
+                resultsPaneCentre.setText(Plagiarism.displayTokens(0, 10));
+                resultsPaneCentre.setEnabled(true);
+                labelResultsCentre.setText("All Tokens");
+                labelResultsCentre.setEnabled(true);
+            }
 
         } else if (e.getSource() == displayTokens) {
 
@@ -289,7 +317,7 @@ public class View extends JFrame implements ActionListener {
             Plagiarism.testPandR(dictionaryMap, inverseDocFreqMap, minPrecision, minRecall);
 
         } else if (e.getSource() == runOnce) {
-            
+
             tokenizationType = (String) comboBoxSelectTokenization.getSelectedItem();
 
             resultsPaneLeft.setText(Plagiarism.displayResults(minIDF, minTFIDF, minMatchingTokens, tokenizationType,
@@ -304,7 +332,7 @@ public class View extends JFrame implements ActionListener {
         } else if (e.getSource() == compare2Docs) {
 
             tokenizationType = (String) comboBoxSelectTokenization.getSelectedItem();
-            
+
             String docAname = docA.getText();
             String docBname = docB.getText();
             resultsPaneCentre.setText(Plagiarism.getDocContents(docAname, directory));
@@ -343,6 +371,14 @@ public class View extends JFrame implements ActionListener {
                 textParameterIDF.setEnabled(true);
                 textMinMatchingTokens.setEnabled(true);
             }
+        } else if (e.getSource()
+                == checkBoxShowTokens) {
+            if (checkBoxShowTokens.isSelected()) {
+                showTokens = true;
+            } else {
+                showTokens = false;
+            }
+
         } else if (e.getSource() == chooseDirectory) {
 
             directoryChooser.showOpenDialog(this);
@@ -376,10 +412,9 @@ public class View extends JFrame implements ActionListener {
             runOnce.setEnabled(false);
 
         } else if (e.getSource() == comboBoxSelectTokenization) {
-  
+
             tokenizationType = (String) comboBoxSelectTokenization.getSelectedItem();
-            
-            
+
         }
 
     }

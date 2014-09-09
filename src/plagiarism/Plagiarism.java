@@ -3,8 +3,11 @@ package plagiarism;
 import com.wcohen.ss.Levenstein;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Scanner;
@@ -32,6 +35,8 @@ public class Plagiarism {
     public static ConcurrentHashMap<String, Double[]> inverseDocFreqMap = new ConcurrentHashMap<>();
     public static ArrayList<String> tokens = new ArrayList<>();
 
+    public static DecimalFormat df = new DecimalFormat("#.###");
+
     //CONSTANTS
     final static int DOC_COUNT = 0;
     final static int IDF = 1;
@@ -49,20 +54,22 @@ public class Plagiarism {
 
     public static String displayResults(double minIDF, double minTFIDF, int minMatchingTokens, String tokenizationType,
             boolean includeApproximateMatches, File directory) {
-        System.out.println("displayResults running");
+
         String output = "";
 
         generateInvertedIndex(includeApproximateMatches, tokenizationType, directory);
-        countMatchesWeighted(minIDF, minTFIDF);
+        countMatches(minIDF, minTFIDF);
         generateResults(allDocPairs, minMatchingTokens);
         output = output + getResults();
 
         return output;
     }
-    
 
     public static void generateInvertedIndex(boolean includeApproximateMatches, String tokenizationType, File directory) { //NB Change nGramSize to tokenizationType
-        System.out.println("generateInvertedIndex running");
+
+        dictionaryMap.clear();
+        inverseDocFreqMap.clear();
+
         //read all files in a directory
         //http://stackoverflow.com/questions/4917326/how-to-iterate-over-the-files-of-a-certain-directory-in-java 
         File[] files = directory.listFiles();
@@ -120,8 +127,7 @@ public class Plagiarism {
     }
 
     public static void calculateTFandIDF(String docContents, String docName, int collectionSize,
-             double docLength) {
-        System.out.println("calculateTFandIDF running");
+            double docLength) {
         ArrayList<String[]> currentPostingsList;
         String[] posting = new String[6];
 
@@ -132,7 +138,6 @@ public class Plagiarism {
             String currentToken = tokens.get(j);
             if (dictionaryMap.isEmpty()) {
 
-                
                 Double[] doubleArray = {1.0, Math.log(collectionSize / 1.0)}; //1.0 because this is the first occurance
                 inverseDocFreqMap.put(currentToken, doubleArray);
 
@@ -145,7 +150,7 @@ public class Plagiarism {
             } else {
                 if (dictionaryMap.containsKey(currentToken)) { //word is in hashmap - 2 possibilities: in this doc, or not
                     currentPostingsList = (ArrayList) dictionaryMap.get(currentToken); //get the arraylist
-          
+
                     for (int i = 0; i < currentPostingsList.size(); i++) {
                         if (currentPostingsList.get(i)[DOC_NAME].equals(docName)) { //if word already in this document
                             documentMatch = true;
@@ -164,7 +169,6 @@ public class Plagiarism {
                         currentPostingsList.set(position, posting);
                         dictionaryMap.put(currentToken, currentPostingsList);
                         documentMatch = false;
-                        
 
                     } else {
 
@@ -276,7 +280,6 @@ public class Plagiarism {
             }
 
             //FINISHED CHECKING FOR EXACT MATCH, NOW CHECK FOR APPROXIMATE
-
             Iterator it = dictionaryMap.entrySet().iterator();
             while (it.hasNext()) {
                 boolean noMatchFound = true;
@@ -481,50 +484,28 @@ public class Plagiarism {
     }
 
     public static String displayTokens(double minimumTFIDF, int quantityOfPostings) {
-        System.out.println("displayTokens running");
+
         String output = "";
-        Iterator it2 = dictionaryMap.entrySet().iterator();
+        
+        Iterator iterator = dictionaryMap.entrySet().iterator();
+        output = output + "Total tokens: " + dictionaryMap.size() + "\n\n";
 
-        System.out.println("Total tokens: " + dictionaryMap.size());
-        System.out.println(" - - - - - tFiDF > " + minimumTFIDF + " - - - - - -");
-        System.out.println(" ");
-
-        while (it2.hasNext()) {
-            Map.Entry termEntry = (Map.Entry) it2.next();
+        while (iterator.hasNext()) {
+            Map.Entry termEntry = (Map.Entry) iterator.next();
             String key = (String) termEntry.getKey();
             ArrayList<String[]> postingsList = (ArrayList) termEntry.getValue();
             Double[] iDFArray = (Double[]) inverseDocFreqMap.get(key);
             double IDFValue = iDFArray[IDF];
 
+            output = output + "Token: '" + key + "'\n";
+            output = output + "iDF: " + df.format(IDFValue) + "\n";
             for (int i = 0; i < postingsList.size(); i++) {
-                if ((Double.parseDouble(postingsList.get(i)[TFIDF_WEIGHT]) >= minimumTFIDF) && (postingsList.size() >= 2) && (postingsList.size() <= quantityOfPostings)) {
-                    System.out.print("'" + key + "'");
-
-                    output = output + "Key: '" + key + "'\n";
-                    System.out.print(", tFiDF: " + postingsList.get(i)[TFIDF_WEIGHT]);
-                    output = output + "tFiDF: " + postingsList.get(i)[TFIDF_WEIGHT];
-                    System.out.print(", Term Frequency: " + postingsList.get(i)[TERM_FREQ]);
-                    output = output + ", Term Frequency: " + postingsList.get(i)[TERM_FREQ];
-                    System.out.print(", iDF: " + IDFValue);
-                    output = output + ", iDF: " + IDFValue;
-                    System.out.print(", Document: " + postingsList.get(i)[DOC_NAME]);
-                    output = output + ", Document: " + postingsList.get(i)[DOC_NAME];
-                    System.out.print(", Document Frequency: " + postingsList.get(i)[FREQ]);
-                    output = output + ", Document Frequency: " + postingsList.get(i)[FREQ];
-                    System.out.println(", Posting list size: " + postingsList.size());
-                    output = output + ", Posting list size: " + postingsList.size() + "\n";
-
-                    for (int j = 0; j < postingsList.size(); j++) {
-                        System.out.print(postingsList.get(j)[DOC_NAME] + ", ");
-                        output = output + postingsList.get(j)[DOC_NAME] + ", ";
-                        System.out.print(postingsList.get(j)[4] + ", ");
-                        output = output + postingsList.get(j)[4] + ", ";
-                    }
-                    System.out.println(" ");
-                    System.out.println(" ");
-                    output = output + "\n\n";
-                }
+                output = output + postingsList.get(i)[DOC_NAME];
+                output = output + "; tf: " + df.format(Double.parseDouble(postingsList.get(i)[TERM_FREQ]));
+                output = output + "; tf-idf: " + df.format(Double.parseDouble(postingsList.get(i)[TFIDF_WEIGHT])) + "\n";
+ 
             }
+            output = output + "\n";
         }
         return output;
     }
@@ -585,7 +566,7 @@ public class Plagiarism {
                             || (Double.parseDouble(postingsList.get(j)[TFIDF_WEIGHT])) > minTFIDF)
                             && currentIDFArray[IDF] > minIDF) {
 
-                        if (currentIDFArray[IDF] > (minIDF * 2)) {
+                        if (currentIDFArray[IDF] > (minIDF + 1.0)) {
                             if (allDocPairs.containsKey(combinedName)) {
                                 int count = allDocPairs.get(combinedName);
                                 count = count + 2;
@@ -610,7 +591,7 @@ public class Plagiarism {
 
     public static void generateResults(ConcurrentHashMap allDocPairs, int minMatchingTokens) {
 
-        System.out.println("generateResults running");
+        resultsDocPairs.clear();
 
         Iterator it = allDocPairs.entrySet().iterator();
         while (it.hasNext()) {
@@ -668,6 +649,16 @@ public class Plagiarism {
         return output;
     }
 
+    public static String getPrecision(Double[] precisionAndRecall) {
+        String output = String.valueOf(precisionAndRecall[PRECISION]);
+        return output;
+    }
+
+    public static String getRecall(Double[] precisionAndRecall) {
+        String output = String.valueOf(precisionAndRecall[RECALL]);
+        return output;
+    }
+
     public static String displayPrecisionAndRecall() {
         String output = "";
         output = getPrecisionAndRecall(calculatePrecisionAndRecall());
@@ -676,26 +667,75 @@ public class Plagiarism {
 
     public static void testPandR(ConcurrentHashMap dictionaryMap, ConcurrentHashMap inverseDocFreqMap, int minPrecision, int minRecall) {
 
-        for (double minIDF = 0.0; minIDF < 3; minIDF = minIDF + 0.2) {
+        FileWriter writer;
+        String csv = "";
 
-            for (double minTFIDF = 0; minTFIDF < 0.01; minTFIDF = minTFIDF + 0.001) {
+        try {
+            writer = new FileWriter("C:\\Users\\Dave\\Desktop\\output.csv");
 
-                System.out.println("");
-                System.out.println("MIN IDF: " + minIDF + ", MIN TFIDF: " + minTFIDF);
-                System.out.println("");
+            for (double minTFIDF = 0; minTFIDF <= 0.003; minTFIDF = minTFIDF + 0.001) {
+                for (double minIDF = 0.2; minIDF <= 1.8; minIDF = minIDF + 0.4) {
 
-                countMatches(minIDF, minTFIDF);
+                    System.out.println("");
+                    System.out.println("MIN IDF: " + minIDF + ", MIN TFIDF: " + minTFIDF);
+                    System.out.println("");
 
-                for (int minMatchingTokens = 0; minMatchingTokens < 300; minMatchingTokens++) {
-                    Double[] precisionAndRecall = calculatePrecisionAndRecall();
-                    if (precisionAndRecall[PRECISION] >= minPrecision && precisionAndRecall[RECALL] >= minRecall) {
+                    countMatchesWeighted(minIDF, minTFIDF);
 
-                        System.out.print("Minimum Matching tokens: " + minMatchingTokens + ", " + getPrecisionAndRecall(precisionAndRecall));
+                    for (int minMatchingTokens = 100; minMatchingTokens <= 275; minMatchingTokens++) {
+                        generateResults(allDocPairs, minMatchingTokens);
+                        Double[] precisionAndRecall = calculatePrecisionAndRecall();
+                        //if (precisionAndRecall[PRECISION] >= minPrecision && precisionAndRecall[RECALL] >= minRecall) {
 
+                        System.out.print("Minimum Matching tokens: " + minMatchingTokens + ", " + getPrecisionAndRecall(precisionAndRecall) + "\n");
+
+                        writer.append(String.valueOf(minTFIDF));
+                        writer.append(";");
+                        writer.append(String.valueOf(minIDF));
+                        writer.append(";");
+                        writer.append(String.valueOf(minMatchingTokens));
+                        writer.append(";");
+                        writer.append(String.valueOf(df.format(precisionAndRecall[PRECISION])));
+                        writer.append(";");
+                        writer.append(String.valueOf(df.format(precisionAndRecall[RECALL])));
+                        writer.append("\n");
+                        //}
                     }
+                    writer.append("\n");
+                    writer.append("\n");
                 }
+
             }
+            writer.flush();
+            writer.close();
+            System.out.println("finished");
+        } catch (IOException ioe) {
+            System.out.println();
         }
+    }
+
+    public static void generateCSV(HashMap newMap) {
+
+        String csv = "";
+        Iterator it = newMap.entrySet().iterator();
+
+        try {
+            FileWriter writer = new FileWriter("C:\\Users\\David\\Desktop\\output.csv");
+            while (it.hasNext()) {
+                Map.Entry termEntry = (Map.Entry) it.next();
+                writer.append(termEntry.getKey().toString());
+                writer.append(",");
+                writer.append(termEntry.getValue().toString());
+                writer.append("\n");
+
+            }
+            writer.flush();
+            writer.close();
+
+        } catch (IOException ioe) {
+            System.out.println(ioe);
+        }
+
     }
 
     public static void splitDocNames(String docPair) {
@@ -740,9 +780,9 @@ public class Plagiarism {
 //                    System.out.print(", Document: " + postingsList.get(i)[documentName]);
 //                    System.out.print(", Document Frequency: " + postingsList.get(i)[frequency]);
 //                    System.out.println(", Posting list size: " + postingsList.size());
-                
+
             }
-            
+
         }
         return output;
 
@@ -802,4 +842,5 @@ public class Plagiarism {
 
         createKnownPlagiarismList(filepath);
     }
+
 }

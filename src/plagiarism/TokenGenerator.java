@@ -52,7 +52,7 @@ public class TokenGenerator {
         } else if (tokenizationType.equals("Java Terminators")) {
             tokens = splitOnJavaSyntax(docContents);
         }
-        System.out.println("tokengen: " + tokens.get(0));
+        //System.out.println("tokengen: " + tokens.get(0));
         return tokens;
     }
 
