@@ -53,12 +53,16 @@ public class Plagiarism {
     }
 
     public static String displayResults(double minIDF, double minTFIDF, int minMatchingTokens, String tokenizationType,
-            boolean includeApproximateMatches, File directory) {
+            boolean includeApproximateMatches, File directory, boolean weighted) {
 
         String output = "";
 
         generateInvertedIndex(includeApproximateMatches, tokenizationType, directory);
-        countMatches(minIDF, minTFIDF);
+        if (weighted) {
+            countMatchesWeighted(minIDF, minTFIDF);
+        } else {
+            countMatches(minIDF, minTFIDF);
+        }
         generateResults(allDocPairs, minMatchingTokens);
         output = output + getResults();
 
@@ -483,12 +487,13 @@ public class Plagiarism {
         }
     }
 
-    public static String displayTokens(double minimumTFIDF, int quantityOfPostings) {
+    public static String displayTokens(double minimumTFIDF, double minimumIDF) {
 
+        String tempOutput = "";
         String output = "";
-        
+        int tokenCount = 0;
+
         Iterator iterator = dictionaryMap.entrySet().iterator();
-        output = output + "Total tokens: " + dictionaryMap.size() + "\n\n";
 
         while (iterator.hasNext()) {
             Map.Entry termEntry = (Map.Entry) iterator.next();
@@ -497,16 +502,22 @@ public class Plagiarism {
             Double[] iDFArray = (Double[]) inverseDocFreqMap.get(key);
             double IDFValue = iDFArray[IDF];
 
-            output = output + "Token: '" + key + "'\n";
-            output = output + "iDF: " + df.format(IDFValue) + "\n";
-            for (int i = 0; i < postingsList.size(); i++) {
-                output = output + postingsList.get(i)[DOC_NAME];
-                output = output + "; tf: " + df.format(Double.parseDouble(postingsList.get(i)[TERM_FREQ]));
-                output = output + "; tf-idf: " + df.format(Double.parseDouble(postingsList.get(i)[TFIDF_WEIGHT])) + "\n";
- 
+            if (IDFValue >= minimumIDF) {
+                tokenCount++;
+                tempOutput = tempOutput + "Token: '" + key + "'\n";
+                tempOutput = tempOutput + "iDF: " + df.format(IDFValue) + "\n";
+                for (int i = 0; i < postingsList.size(); i++) {
+
+                    if (Double.parseDouble(postingsList.get(i)[TFIDF_WEIGHT]) >= minimumTFIDF) {
+                        tempOutput = tempOutput + postingsList.get(i)[DOC_NAME];
+                        tempOutput = tempOutput + "; tf: " + df.format(Double.parseDouble(postingsList.get(i)[TERM_FREQ]));
+                        tempOutput = tempOutput + "; tf-idf: " + df.format(Double.parseDouble(postingsList.get(i)[TFIDF_WEIGHT])) + "\n";
+                    }
+                }
+                tempOutput = tempOutput + "\n";
             }
-            output = output + "\n";
         }
+        output = output + "Total tokens: " + tokenCount + "\n\n" + tempOutput;
         return output;
     }
 
@@ -518,7 +529,7 @@ public class Plagiarism {
      * @param inverseDocFreqMap
      */
     public static void countMatches(double minIDF, double minTFIDF) {
-        System.out.println("'countMatches' running");
+        
         allDocPairs.clear();
         Iterator it2 = dictionaryMap.entrySet().iterator();
         while (it2.hasNext()) {
@@ -527,18 +538,23 @@ public class Plagiarism {
             ArrayList<String[]> postingsList = (ArrayList) termEntry.getValue();
             for (int i = 0; i < postingsList.size() - 1; i++) {
                 for (int j = i + 1; j < postingsList.size(); j++) {
+                    
                     String combinedName = postingsList.get(i)[DOC_NAME] + "_" + postingsList.get(j)[DOC_NAME];
-
+                    String alternateName = postingsList.get(j)[DOC_NAME] + "_" +postingsList.get(i)[DOC_NAME];
                     Double[] currentIDFArray = (Double[]) inverseDocFreqMap.get(token);
 
-                    if (((Double.parseDouble(postingsList.get(i)[TFIDF_WEIGHT])) > minTFIDF
-                            || (Double.parseDouble(postingsList.get(j)[TFIDF_WEIGHT])) > minTFIDF)
-                            && currentIDFArray[IDF] > minIDF) {
+                    if (((Double.parseDouble(postingsList.get(i)[TFIDF_WEIGHT])) >= minTFIDF
+                            || (Double.parseDouble(postingsList.get(j)[TFIDF_WEIGHT])) >= minTFIDF)
+                            && currentIDFArray[IDF] >= minIDF) {
 
                         if (allDocPairs.containsKey(combinedName)) {
                             int count = allDocPairs.get(combinedName);
                             count++;
                             allDocPairs.put(combinedName, count);
+                        } else if (allDocPairs.containsKey(alternateName)) {
+                            int count = allDocPairs.get(alternateName);
+                            count++;
+                            allDocPairs.put(alternateName, count);
                         } else {
                             allDocPairs.put(combinedName, 1);
                         }
@@ -562,11 +578,11 @@ public class Plagiarism {
 
                     Double[] currentIDFArray = (Double[]) inverseDocFreqMap.get(token);
 
-                    if (((Double.parseDouble(postingsList.get(i)[TFIDF_WEIGHT])) > minTFIDF
-                            || (Double.parseDouble(postingsList.get(j)[TFIDF_WEIGHT])) > minTFIDF)
-                            && currentIDFArray[IDF] > minIDF) {
+                    if (((Double.parseDouble(postingsList.get(i)[TFIDF_WEIGHT])) >= minTFIDF
+                            || (Double.parseDouble(postingsList.get(j)[TFIDF_WEIGHT])) >= minTFIDF)
+                            && currentIDFArray[IDF] >= minIDF) {
 
-                        if (currentIDFArray[IDF] > (minIDF + 1.0)) {
+                        if (currentIDFArray[IDF] >= (minIDF + 1.0)) {
                             if (allDocPairs.containsKey(combinedName)) {
                                 int count = allDocPairs.get(combinedName);
                                 count = count + 2;
@@ -635,7 +651,7 @@ public class Plagiarism {
         }
 
         double precision = ((relevantDocumentsRetrieved / totalRetrievedDocuments) * 100);
-        double recall = ((relevantDocumentsRetrieved / knownPlagiarism.size()) * 100);
+        double recall = ((relevantDocumentsRetrieved / (knownPlagiarism.size()/2)) * 100);
 
         precisionAndRecall[PRECISION] = precision;
         precisionAndRecall[RECALL] = recall;
@@ -665,24 +681,29 @@ public class Plagiarism {
         return output;
     }
 
-    public static void testPandR(ConcurrentHashMap dictionaryMap, ConcurrentHashMap inverseDocFreqMap, int minPrecision, int minRecall) {
+    public static void testPandR(int minTokenThreshold, int maxTokenThreshold, boolean includeApproximateMatches, String tokenizationType, File directory, boolean weighted) {
 
         FileWriter writer;
         String csv = "";
+
+        generateInvertedIndex(includeApproximateMatches, tokenizationType, directory);
 
         try {
             writer = new FileWriter("C:\\Users\\Dave\\Desktop\\output.csv");
 
             for (double minTFIDF = 0; minTFIDF <= 0.003; minTFIDF = minTFIDF + 0.001) {
-                for (double minIDF = 0.2; minIDF <= 1.8; minIDF = minIDF + 0.4) {
+                for (double minIDF = 0.5; minIDF <= 2.5; minIDF = minIDF + 0.5) {
 
                     System.out.println("");
                     System.out.println("MIN IDF: " + minIDF + ", MIN TFIDF: " + minTFIDF);
                     System.out.println("");
 
-                    countMatchesWeighted(minIDF, minTFIDF);
-
-                    for (int minMatchingTokens = 100; minMatchingTokens <= 275; minMatchingTokens++) {
+                    if (weighted) {
+                        countMatchesWeighted(minIDF, minTFIDF);
+                    } else {
+                        countMatches(minIDF, minTFIDF);
+                    }
+                    for (int minMatchingTokens = minTokenThreshold; minMatchingTokens <= maxTokenThreshold; minMatchingTokens++) {
                         generateResults(allDocPairs, minMatchingTokens);
                         Double[] precisionAndRecall = calculatePrecisionAndRecall();
                         //if (precisionAndRecall[PRECISION] >= minPrecision && precisionAndRecall[RECALL] >= minRecall) {
@@ -818,6 +839,7 @@ public class Plagiarism {
 
     public static void createKnownPlagiarismList(File filepath) {
 
+        knownPlagiarism.clear();
         try {
             Scanner s = new Scanner(filepath);
             while (s.hasNext()) {
@@ -832,6 +854,7 @@ public class Plagiarism {
 
     public static String getKnownPlagiarism() {
         String output = "";
+        
         for (int i = 0; i < knownPlagiarism.size(); i++) {
             output = output + knownPlagiarism.get(i) + "\n";
         }

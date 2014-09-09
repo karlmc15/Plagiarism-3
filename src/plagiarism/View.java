@@ -18,33 +18,27 @@ import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.JTextPane;
-import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultCaret;
-import javax.swing.text.DefaultHighlighter;
-import javax.swing.text.Highlighter;
 import net.miginfocom.swing.MigLayout;
 
 public class View extends JFrame implements ActionListener {
 
-    private final JButton chooseDirectory, runApplication, compare2Docs, getKnownPlagiarism, runOnce, runTest, displayTokens;
-    private final JTextField textMaxPostings, textMinPrecision, textMinRecall, textMinMatchingTokens;
+    private final JButton chooseDirectory, runApplication, compare2Docs, getKnownPlagiarism, runOnce, runTest;
+    private final JTextField textMinTokenThreshold, textMaxTokenThreshold, textMinMatchingTokens;
     private final JTextField docA, docB;
-    private final JLabel labelSelectTokenization, labelMaxPostings, labelResultsLeft, labelResultsCentre, labelResultsRight;
-    private final JLabel labelMinPrecision, labelMinRecall, labelMinMatchingTokens, labelRunTest, labelCompare2Docs;
-    private final JLabel labelDocA, labelDocB, labelDisplayTokens;
+    private final JLabel labelSelectTokenization, labelResultsLeft, labelResultsCentre, labelResultsRight;
+    private final JLabel labelMaxTokenThreshold, labelMinTokenThreshold, labelMinMatchingTokens, labelRunTest, labelCompare2Docs;
+    private final JLabel labelDocA, labelDocB;
     private final JTextArea resultsPaneLeft, resultsPaneCentre, resultsPaneRight;
-    boolean generated1, generated2, generated3, generated4, generated5, generated6, generated7 = false;
-    boolean showTokens = false;
+    boolean displayTokens, weighted = false;
     private final JScrollPane scrollpaneLeft, scrollpaneCentre, scrollpaneRight;
-    public Integer maxPostings, minMatchingTokens, minRecall, minPrecision;
-    ;;
+    public Integer maxPostings, minMatchingTokens, minTokenThreshold, maxTokenThreshold;
     public Double minIDF, minTFIDF;
     private final String defaultIDF = "0";
     private final String defaultTFIDF = "0.0";
     private final String defaultMinMatchingTokens = "0";
 
-    public final JCheckBox checkBoxDefaultParameters, checkBoxShowTokens;
+    public final JCheckBox checkBoxDefaultParameters, checkBoxDisplayTokens, checkBoxWeighted;
     public final JTextField textParameterTFIDF;
     public final JTextField textParameterIDF;
     public final JLabel labelParameterTFIDF;
@@ -62,7 +56,7 @@ public class View extends JFrame implements ActionListener {
 
     public File directory;
 
-    String[] tokenizationTypes = {"1-Grams", "Bi-Grams", "3-Grams", "4-Grams", "Basic 2-Grams", "White Space", "Java Syntax"};
+    String[] tokenizationTypes = {"1-Grams", "Bi-Grams", "3-Grams", "4-Grams", "1-Grams plus WhiteSpace", "White Space", "Java Syntax"};
     public JComboBox comboBoxSelectTokenization = new JComboBox(tokenizationTypes);
 
     public static ConcurrentHashMap<String, ArrayList<String[]>> dictionaryMap = new ConcurrentHashMap<String, ArrayList<String[]>>();
@@ -71,7 +65,7 @@ public class View extends JFrame implements ActionListener {
 
     public View() {
         super();
-        setTitle("Dave's Plagiarism Detector");
+        setTitle("Similarity Detector");
         setSize(950, 600);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         //setVisible(true);
@@ -97,14 +91,14 @@ public class View extends JFrame implements ActionListener {
         panelMain.add(panelE, "span");
 
         //panelA : MAIN APPLICATION
-        labelSelectTokenization = new JLabel("Select Tokenization Method:");
+        labelSelectTokenization = new JLabel("Tokenisation Method:");
         panelA.add(labelSelectTokenization);
 
         panelA.add(comboBoxSelectTokenization);
         comboBoxSelectTokenization.setSelectedItem("Bi-Grams");
         comboBoxSelectTokenization.addActionListener(this);
 
-        checkBoxDefaultParameters = new JCheckBox("Use Default Parameters");
+        checkBoxDefaultParameters = new JCheckBox("Default Parameters");
         checkBoxDefaultParameters.addActionListener(this);
         checkBoxDefaultParameters.setSelected(true);
         panelA.add(checkBoxDefaultParameters);
@@ -134,10 +128,15 @@ public class View extends JFrame implements ActionListener {
         directoryChooser = new JFileChooser();
         directoryChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 
-        checkBoxShowTokens = new JCheckBox("Show Tokens");
-        checkBoxShowTokens.addActionListener(this);
-        checkBoxShowTokens.setSelected(false);
-        panelA.add(checkBoxShowTokens);
+        checkBoxDisplayTokens = new JCheckBox("Display Tokens");
+        checkBoxDisplayTokens.addActionListener(this);
+        checkBoxDisplayTokens.setSelected(false);
+        panelA.add(checkBoxDisplayTokens);
+
+        checkBoxWeighted = new JCheckBox("Weighted");
+        checkBoxWeighted.addActionListener(this);
+        checkBoxWeighted.setSelected(false);
+        panelA.add(checkBoxWeighted);
 
         runApplication = new JButton("Run Application");
         runApplication.addActionListener(this);
@@ -193,21 +192,6 @@ public class View extends JFrame implements ActionListener {
         this.compare2Docs.addActionListener(this);
         panelE.add(compare2Docs, "wrap");
 
-        // DISPLAY TOKENS
-        this.labelDisplayTokens = new JLabel("DISPLAY TOKENS");
-        panelE.add(labelDisplayTokens, "wrap, gaptop 15");
-
-        this.labelMaxPostings = new JLabel("Enter maximum number of Postings:");
-        panelE.add(labelMaxPostings);
-
-        this.textMaxPostings = new JTextField(20);
-        panelE.add(textMaxPostings);
-
-        this.displayTokens = new JButton("Display Tokens");
-        displayTokens.addActionListener(this);
-        displayTokens.setEnabled(true);
-        panelE.add(displayTokens, "wrap");
-
         // RUN TEST
         labelRunTest = new JLabel("TESTING");
         panelE.add(labelRunTest, "wrap, gaptop 15");
@@ -238,21 +222,21 @@ public class View extends JFrame implements ActionListener {
 
         panelE.add(radioMultipleTest);
 
-        labelMinPrecision = new JLabel("Enter minimum precision (0-100)");
-        panelE.add(labelMinPrecision);
-        labelMinPrecision.setEnabled(false);
+        labelMinTokenThreshold = new JLabel("Enter minimum token threshold");
+        panelE.add(labelMinTokenThreshold);
+        labelMinTokenThreshold.setEnabled(false);
 
-        textMinPrecision = new JTextField("0", 20);
-        panelE.add(textMinPrecision);
-        textMinPrecision.setEnabled(false);
+        textMinTokenThreshold = new JTextField("0", 10);
+        panelE.add(textMinTokenThreshold);
+        textMinTokenThreshold.setEnabled(false);
 
-        labelMinRecall = new JLabel("Enter minimum recall (0-100)");
-        panelE.add(labelMinRecall);
-        labelMinRecall.setEnabled(false);
+        labelMaxTokenThreshold = new JLabel("Enter maximum token threshold");
+        panelE.add(labelMaxTokenThreshold);
+        labelMaxTokenThreshold.setEnabled(false);
 
-        textMinRecall = new JTextField("0", 20);
-        panelE.add(textMinRecall);
-        textMinRecall.setEnabled(false);
+        textMaxTokenThreshold = new JTextField("0", 10);
+        panelE.add(textMaxTokenThreshold);
+        textMaxTokenThreshold.setEnabled(false);
 
         runTest = new JButton("Run Test");
         runTest.addActionListener(this);
@@ -276,8 +260,8 @@ public class View extends JFrame implements ActionListener {
         minIDF = Double.parseDouble(textParameterIDF.getText());
         minTFIDF = Double.parseDouble(textParameterTFIDF.getText());
         minMatchingTokens = Integer.parseInt(textMinMatchingTokens.getText());
-        minPrecision = Integer.parseInt(textMinPrecision.getText());
-        minRecall = Integer.parseInt(textMinRecall.getText());
+        minTokenThreshold = Integer.parseInt(textMinTokenThreshold.getText());
+        maxTokenThreshold = Integer.parseInt(textMaxTokenThreshold.getText());
 
         Boolean includeApproximateMatches = false;
 
@@ -286,42 +270,40 @@ public class View extends JFrame implements ActionListener {
             tokenizationType = (String) comboBoxSelectTokenization.getSelectedItem();
 
             resultsPaneLeft.setText(Plagiarism.displayResults(minIDF, minTFIDF, minMatchingTokens, tokenizationType,
-                    includeApproximateMatches, directory));
+                    includeApproximateMatches, directory, weighted));
+
             labelResultsLeft.setText("Suspicious Document Pairs");
 
             labelResultsCentre.setText(" ");
             labelResultsRight.setText(" ");
-            
+
             labelResultsCentre.setEnabled(false);
             labelResultsRight.setEnabled(false);
-            
+
             resultsPaneCentre.setText(" ");
             resultsPaneRight.setText(" ");
-            
+
             resultsPaneCentre.setEnabled(false);
             resultsPaneRight.setEnabled(false);
 
-            if (showTokens) {
-                resultsPaneCentre.setText(Plagiarism.displayTokens(0, 10));
+            if (displayTokens) {
+                resultsPaneCentre.setText(Plagiarism.displayTokens(minTFIDF, minIDF));
                 resultsPaneCentre.setEnabled(true);
                 labelResultsCentre.setText("All Tokens");
                 labelResultsCentre.setEnabled(true);
             }
 
-        } else if (e.getSource() == displayTokens) {
-
-            resultsPaneLeft.setText(Plagiarism.displayTokens(minTFIDF, maxPostings));
-
         } else if (e.getSource() == runTest) {
 
-            Plagiarism.testPandR(dictionaryMap, inverseDocFreqMap, minPrecision, minRecall);
+            tokenizationType = (String) comboBoxSelectTokenization.getSelectedItem();
+            Plagiarism.testPandR(minTokenThreshold, maxTokenThreshold, includeApproximateMatches, tokenizationType, directory, weighted);
 
         } else if (e.getSource() == runOnce) {
 
             tokenizationType = (String) comboBoxSelectTokenization.getSelectedItem();
 
             resultsPaneLeft.setText(Plagiarism.displayResults(minIDF, minTFIDF, minMatchingTokens, tokenizationType,
-                    includeApproximateMatches, directory));
+                    includeApproximateMatches, directory, weighted));
             resultsPaneCentre.setText(Plagiarism.getKnownPlagiarism());
             resultsPaneRight.setText(Plagiarism.displayPrecisionAndRecall());
 
@@ -372,11 +354,18 @@ public class View extends JFrame implements ActionListener {
                 textMinMatchingTokens.setEnabled(true);
             }
         } else if (e.getSource()
-                == checkBoxShowTokens) {
-            if (checkBoxShowTokens.isSelected()) {
-                showTokens = true;
+                == checkBoxDisplayTokens) {
+            if (checkBoxDisplayTokens.isSelected()) {
+                displayTokens = true;
             } else {
-                showTokens = false;
+                displayTokens = false;
+            }
+
+        } else if (e.getSource() == checkBoxWeighted) {
+            if (checkBoxWeighted.isSelected()) {
+                weighted = true;
+            } else {
+                weighted = false;
             }
 
         } else if (e.getSource() == chooseDirectory) {
@@ -389,7 +378,6 @@ public class View extends JFrame implements ActionListener {
 
             knownPlagiarismChooser.showOpenDialog(this);
             Plagiarism.setKnownPlagiarism(knownPlagiarismChooser.getSelectedFile());
-
             radioSingleTest.setEnabled(true);
             radioSingleTest.setSelected(true);
             radioMultipleTest.setEnabled(true);
@@ -397,16 +385,16 @@ public class View extends JFrame implements ActionListener {
 
         } else if (e.getSource() == radioSingleTest) {
             runOnce.setEnabled(true);
-            labelMinPrecision.setEnabled(false);
-            textMinPrecision.setEnabled(false);
-            labelMinRecall.setEnabled(false);
-            textMinRecall.setEnabled(false);
+            labelMinTokenThreshold.setEnabled(false);
+            textMinTokenThreshold.setEnabled(false);
+            labelMaxTokenThreshold.setEnabled(false);
+            textMaxTokenThreshold.setEnabled(false);
             runTest.setEnabled(false);
         } else if (e.getSource() == radioMultipleTest) {
-            labelMinPrecision.setEnabled(true);
-            textMinPrecision.setEnabled(true);
-            labelMinRecall.setEnabled(true);
-            textMinRecall.setEnabled(true);
+            labelMinTokenThreshold.setEnabled(true);
+            textMinTokenThreshold.setEnabled(true);
+            labelMaxTokenThreshold.setEnabled(true);
+            textMaxTokenThreshold.setEnabled(true);
             runTest.setEnabled(true);
 
             runOnce.setEnabled(false);

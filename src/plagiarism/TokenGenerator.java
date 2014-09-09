@@ -27,10 +27,8 @@ public class TokenGenerator {
 //    }
     public ArrayList generateTokens(String docContents, String tokenizationType) {
 
-        System.out.println("token generator running");
         ArrayList<String> tokens = new ArrayList<>();
        
-     
         if (tokenizationType.equals("1-Grams")) {
             tokens = generateOneGrams(docContents);
 
@@ -43,13 +41,13 @@ public class TokenGenerator {
         } else if (tokenizationType.equals("4-Grams")) {
             tokens = generateFourGrams(docContents);
 
-        } else if (tokenizationType.equals("Basic 2-Grams")) {
-            tokens = generateTwoGramsBasic(docContents);
+        } else if (tokenizationType.equals("1-Grams plus WhiteSpace")) {
+            tokens = generateOneGramsPlusWhiteSpace(docContents);
 
-        } else if (tokenizationType.equals("WhiteSpace")) {
+        } else if (tokenizationType.equals("White Space")) {
             tokens = generateSpaces(docContents);
 
-        } else if (tokenizationType.equals("Java Terminators")) {
+        } else if (tokenizationType.equals("Java Syntax")) {
             tokens = splitOnJavaSyntax(docContents);
         }
         //System.out.println("tokengen: " + tokens.get(0));
@@ -68,7 +66,7 @@ public class TokenGenerator {
         return tokens;
     }
 
-    public static ArrayList<String> generateTwoGramsBasic(String docContents) {
+    public static ArrayList<String> generateOneGramsPlusWhiteSpace(String docContents) {
 
         ArrayList<String> tokens = new ArrayList<>();
         docContents = docContents + " "; //ensures last word is added.
