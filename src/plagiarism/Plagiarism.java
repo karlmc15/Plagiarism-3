@@ -529,7 +529,7 @@ public class Plagiarism {
      * @param inverseDocFreqMap
      */
     public static void countMatches(double minIDF, double minTFIDF) {
-        
+
         allDocPairs.clear();
         Iterator it2 = dictionaryMap.entrySet().iterator();
         while (it2.hasNext()) {
@@ -538,9 +538,9 @@ public class Plagiarism {
             ArrayList<String[]> postingsList = (ArrayList) termEntry.getValue();
             for (int i = 0; i < postingsList.size() - 1; i++) {
                 for (int j = i + 1; j < postingsList.size(); j++) {
-                    
+
                     String combinedName = postingsList.get(i)[DOC_NAME] + "_" + postingsList.get(j)[DOC_NAME];
-                    String alternateName = postingsList.get(j)[DOC_NAME] + "_" +postingsList.get(i)[DOC_NAME];
+                    String alternateName = postingsList.get(j)[DOC_NAME] + "_" + postingsList.get(i)[DOC_NAME];
                     Double[] currentIDFArray = (Double[]) inverseDocFreqMap.get(token);
 
                     if (((Double.parseDouble(postingsList.get(i)[TFIDF_WEIGHT])) >= minTFIDF
@@ -651,7 +651,7 @@ public class Plagiarism {
         }
 
         double precision = ((relevantDocumentsRetrieved / totalRetrievedDocuments) * 100);
-        double recall = ((relevantDocumentsRetrieved / (knownPlagiarism.size()/2)) * 100);
+        double recall = ((relevantDocumentsRetrieved / (knownPlagiarism.size() / 2)) * 100);
 
         precisionAndRecall[PRECISION] = precision;
         precisionAndRecall[RECALL] = recall;
@@ -854,8 +854,8 @@ public class Plagiarism {
 
     public static String getKnownPlagiarism() {
         String output = "";
-        
-        for (int i = 0; i < knownPlagiarism.size(); i++) {
+
+        for (int i = 0; i < (knownPlagiarism.size()/2); i++) {
             output = output + knownPlagiarism.get(i) + "\n";
         }
         return output;
@@ -866,4 +866,78 @@ public class Plagiarism {
         createKnownPlagiarismList(filepath);
     }
 
+    public static String[] setDefaults(boolean useDefaults, boolean weighted, String tokenisationType) {
+
+        String[] parameters = new String[3];
+        int TEXT_TFIDF = 0;
+        int TEXT_IDF = 1;
+        int TEXT_MIN_TOKENS = 2;
+
+        if (useDefaults && weighted) {
+
+            if (tokenisationType.equals("1-Grams")) {
+                parameters[TEXT_TFIDF] = "0.002";
+                parameters[TEXT_IDF] = "0.02";
+                parameters[TEXT_MIN_TOKENS] = "50";
+            } else if (tokenisationType.equals("Bi-Grams")) {
+                parameters[TEXT_TFIDF] = "0.003";
+                parameters[TEXT_IDF] = "0.06";
+                parameters[TEXT_MIN_TOKENS] = "225";
+            } else if (tokenisationType.equals("3-Grams")) {
+                parameters[TEXT_TFIDF] = "0.002";
+                parameters[TEXT_IDF] = "0.02";
+                parameters[TEXT_MIN_TOKENS] = "50";
+            } else if (tokenisationType.equals("4-Grams")) {
+                parameters[TEXT_TFIDF] = "0.002";
+                parameters[TEXT_IDF] = "0.02";
+                parameters[TEXT_MIN_TOKENS] = "50";
+            } else if (tokenisationType.equals("1-Grams plus White Space")) {
+                parameters[TEXT_TFIDF] = "0.002";
+                parameters[TEXT_IDF] = "0.02";
+                parameters[TEXT_MIN_TOKENS] = "50";
+            } else if (tokenisationType.equals("White Space")) {
+                parameters[TEXT_TFIDF] = "0.002";
+                parameters[TEXT_IDF] = "0.02";
+                parameters[TEXT_MIN_TOKENS] = "50";
+            } else if (tokenisationType.equals("Java Syntax")) {
+                parameters[TEXT_TFIDF] = "0.002";
+                parameters[TEXT_IDF] = "0.02";
+                parameters[TEXT_MIN_TOKENS] = "50";
+            }
+
+        } else if (useDefaults && !weighted) {
+
+            if (tokenisationType.equals("1-Grams")) {
+                parameters[TEXT_TFIDF] = "0.003";
+                parameters[TEXT_IDF] = "1.0";
+                parameters[TEXT_MIN_TOKENS] = "50";
+            } else if (tokenisationType.equals("Bi-Grams")) {
+                parameters[TEXT_TFIDF] = "0.003";
+                parameters[TEXT_IDF] = "1.0";
+                parameters[TEXT_MIN_TOKENS] = "125";
+            } else if (tokenisationType.equals("3-Grams")) {
+                parameters[TEXT_TFIDF] = "0.003";
+                parameters[TEXT_IDF] = "1.0";
+                parameters[TEXT_MIN_TOKENS] = "30";
+            } else if (tokenisationType.equals("4-Grams")) {
+                parameters[TEXT_TFIDF] = "0.002";
+                parameters[TEXT_IDF] = "0.02";
+                parameters[TEXT_MIN_TOKENS] = "50";
+            } else if (tokenisationType.equals("1-Grams plus White Space")) {
+                parameters[TEXT_TFIDF] = "0.002";
+                parameters[TEXT_IDF] = "0.02";
+                parameters[TEXT_MIN_TOKENS] = "50";
+            } else if (tokenisationType.equals("White Space")) {
+                parameters[TEXT_TFIDF] = "0.002";
+                parameters[TEXT_IDF] = "0.02";
+                parameters[TEXT_MIN_TOKENS] = "50";
+            } else if (tokenisationType.equals("Java Syntax")) {
+                parameters[TEXT_TFIDF] = "0.002";
+                parameters[TEXT_IDF] = "0.02";
+                parameters[TEXT_MIN_TOKENS] = "50";
+            }
+        }
+
+        return parameters;
+    }
 }
